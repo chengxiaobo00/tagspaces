@@ -896,7 +896,14 @@ export function sanitizeAttribution(html: string | undefined): string {
 export function openURLExternally(url: string, skipConfirmation = false) {
   if (skipConfirmation) {
     openUrl(url);
-  } else if (window.confirm(i18n.t('core:confirmOpenUrl', { url }))) {
+  } else if (
+    window.confirm(
+      i18n.t('core:confirmOpenUrl', {
+        url,
+        interpolation: { escapeValue: false },
+      }),
+    )
+  ) {
     openUrl(url);
   }
 }
