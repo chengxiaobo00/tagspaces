@@ -113,14 +113,25 @@ function LocalForm(props: Props) {
                 autoCapitalize: 'none',
                 endAdornment: (
                   <InputAdornment position="end" sx={{ height: '32px' }}>
-                    <TsButton
-                      size="small"
-                      data-tid="openDirectoryTID"
-                      onClick={openDirectory}
-                      variant="contained"
-                    >
-                      {t('core:chooseFolder')}
-                    </TsButton>
+                    {AppConfig.isCapacitoriOS ? (
+                      <TsButton
+                        size="small"
+                        data-tid="useICloudDriveTID"
+                        onClick={useICloudDrive}
+                        variant="contained"
+                      >
+                        {t('core:useICloudDrive')}
+                      </TsButton>
+                    ) : (
+                      <TsButton
+                        size="small"
+                        data-tid="openDirectoryTID"
+                        onClick={openDirectory}
+                        variant="contained"
+                      >
+                        {t('core:chooseFolder')}
+                      </TsButton>
+                    )}
                   </InputAdornment>
                 ),
               },
@@ -134,15 +145,7 @@ function LocalForm(props: Props) {
             </FormHelperText>
           )}
           {AppConfig.isCapacitoriOS && (
-            <TsButton
-              size="small"
-              data-tid="useICloudDriveTID"
-              onClick={useICloudDrive}
-              variant="outlined"
-              sx={{ marginTop: '8px', alignSelf: 'flex-start' }}
-            >
-              {t('core:useICloudDrive')}
-            </TsButton>
+            <FormHelperText>{t('core:iosLocalPathHint')}</FormHelperText>
           )}
         </FormControl>
       </Grid>

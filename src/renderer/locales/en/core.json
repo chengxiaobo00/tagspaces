@@ -576,6 +576,7 @@
   "iCloudFolder": "iCloud Drive",
   "useICloudDrive": "Use iCloud Drive",
   "iCloudNotAvailable": "iCloud Drive is not available. Make sure you are signed in to iCloud and iCloud Drive is enabled in Settings.",
+  "iosLocalPathHint": "Tip: enter / as path to use the app's internal storage. Tap \"Use iCloud Drive\" above to connect your iCloud Drive folder.",
   "startImportButton": "Import",
   "startExportButton": "Export",
   "extractGeoCoordinates": "Extract geo-coordinates from files as tags",
