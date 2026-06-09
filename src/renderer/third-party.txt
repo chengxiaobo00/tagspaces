@@ -9376,6 +9376,74 @@ SOFTWARE.
 
 The following npm packages may be included in this product:
 
+ - @capacitor/browser@8.0.3
+ - @capacitor/camera@8.0.2
+ - @capacitor/share@8.0.1
+
+These packages each contain the following license:
+
+Copyright 2020-present Ionic
+https://ionic.io
+
+MIT License
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+-----------
+
+The following npm packages may be included in this product:
+
+ - @capacitor/app@8.1.0
+ - @capacitor/device@8.0.2
+ - @capacitor/splash-screen@8.0.1
+
+These packages each contain the following license:
+
+Copyright 2020-present Ionic
+https://ionic.io
+
+MIT License
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+-----------
+
+The following npm packages may be included in this product:
+
  - @jridgewell/gen-mapping@0.3.13
  - @jridgewell/sourcemap-codec@1.5.5
  - @jridgewell/trace-mapping@0.3.31
@@ -11583,6 +11651,7 @@ copy of the Program in return for a fee.
 
 The following npm packages may be included in this product:
 
+ - @anuradev/capacitor-background-mode@7.2.1
  - @napi-rs/canvas-darwin-arm64@0.1.100
  - @napi-rs/canvas-darwin-arm64@0.1.88
  - @react-dnd/invariant@4.0.2
@@ -12312,6 +12381,36 @@ SOFTWARE.
 
 The following npm package may be included in this product:
 
+ - @capacitor/core@8.3.4
+
+This package contains the following license:
+
+MIT License
+
+Copyright (c) 2017-present Drifty Co.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+-----------
+
+The following npm package may be included in this product:
+
  - css-box-model@1.2.1
 
 This package contains the following license:
@@ -12989,6 +13088,36 @@ SOFTWARE.
 
 The following npm package may be included in this product:
 
+ - @capawesome/capacitor-file-picker@8.0.2
+
+This package contains the following license:
+
+MIT License
+
+Copyright (c) 2021 Robin Genz
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+-----------
+
+The following npm package may be included in this product:
+
  - date-fns@4.1.0
 
 This package contains the following license:
@@ -13418,6 +13547,36 @@ SOFTWARE.
 
 The following npm package may be included in this product:
 
+ - @capacitor-community/file-opener@8.0.1
+
+This package contains the following license:
+
+MIT License
+
+Copyright (c) 2025 Capacitor Community
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+-----------
+
+The following npm package may be included in this product:
+
  - zod@3.25.67
 
 This package contains the following license:
@@ -13425,6 +13584,37 @@ This package contains the following license:
 MIT License
 
 Copyright (c) 2025 Colin McDonnell
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+-----------
+
+The following npm packages may be included in this product:
+
+ - @capacitor/filesystem@8.1.2
+ - @capacitor/synapse@1.0.4
+
+These packages each contain the following license:
+
+MIT License
+
+Copyright (c) 2025 Ionic
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -16555,7 +16745,7 @@ SOFTWARE.
 
 The following npm package may be included in this product:
 
- - @tagspaces/extensions@1.0.247
+ - @tagspaces/extensions@1.0.250
 
 This package contains the following license:
 
@@ -16572,16 +16762,16 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 The following npm packages may be included in this product:
 
- - @tagspaces/tagspaces-common-aws3@4.8.5
- - @tagspaces/tagspaces-common-cordova@4.8.5
- - @tagspaces/tagspaces-common-node@4.8.5
- - @tagspaces/tagspaces-common@4.8.5
- - @tagspaces/tagspaces-indexer@4.8.5
+ - @tagspaces/tagspaces-common-aws3@4.8.6
+ - @tagspaces/tagspaces-common-cordova@4.8.6
+ - @tagspaces/tagspaces-common-node@4.8.6
+ - @tagspaces/tagspaces-common@4.8.6
+ - @tagspaces/tagspaces-indexer@4.8.6
  - @tagspaces/tagspaces-pdf-extraction@4.8.4
- - @tagspaces/tagspaces-search@4.8.5
- - @tagspaces/tagspaces-thumbgen-image@4.8.5
- - @tagspaces/tagspaces-workers@4.8.5
- - @tagspaces/tagspaces-ws@4.8.5
+ - @tagspaces/tagspaces-search@4.8.6
+ - @tagspaces/tagspaces-thumbgen-image@4.8.6
+ - @tagspaces/tagspaces-workers@4.8.6
+ - @tagspaces/tagspaces-ws@4.8.6
 
 These packages each contain the following license:
 
