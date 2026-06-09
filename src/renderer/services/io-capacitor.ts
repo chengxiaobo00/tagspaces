@@ -696,11 +696,26 @@ function saveFilePromise(param, content, overWrite, isRaw) {
 
 function blobToBase64(blob) {
   return new Promise((resolve, reject) => {
-    if (blob instanceof ArrayBuffer) {
-      const bytes = new Uint8Array(blob);
+    // Handle ArrayBuffer and any TypedArray view (Uint8Array, etc.).
+    // Critical: base64ToUint8Array() returns a Uint8Array, which is a *view*
+    // — `instanceof ArrayBuffer` is false. Without this branch the thumbnail
+    // save path (saveThumbnailPromise → saveBinaryFilePromise) falls through
+    // to btoa(String(Uint8Array)) and writes "MCwxLDIs..." junk to disk,
+    // producing zero-thumbnails on iOS/Android Capacitor.
+    if (blob instanceof ArrayBuffer || ArrayBuffer.isView(blob)) {
+      const bytes =
+        blob instanceof ArrayBuffer
+          ? new Uint8Array(blob)
+          : new Uint8Array(blob.buffer, blob.byteOffset, blob.byteLength);
+      // Chunked to avoid blowing the JS engine's argument limit on large
+      // payloads (apply spreads each byte as a separate argument).
       let binary = '';
-      for (let i = 0; i < bytes.length; i++) {
-        binary += String.fromCharCode(bytes[i]);
+      const CHUNK = 0x8000;
+      for (let i = 0; i < bytes.length; i += CHUNK) {
+        binary += String.fromCharCode.apply(
+          null,
+          bytes.subarray(i, i + CHUNK) as any,
+        );
       }
       resolve(btoa(binary));
       return;
