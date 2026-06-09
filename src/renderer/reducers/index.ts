@@ -100,13 +100,13 @@ function configureApp(extConfigObj) {
     Object.freeze(AppConfig.ExtEnabledPerspectives);
   }
   AppConfig.ExtLightThemeLightColor =
-    extConfigObj.ExtLightThemeLightColor ?? AppConfig.ExtLightThemeLightColor; // do not apply currently
+    extConfigObj.ExtLightThemeLightColor ?? AppConfig.ExtLightThemeLightColor;
   AppConfig.ExtLightThemeMainColor =
-    extConfigObj.ExtLightThemeMainColor ?? AppConfig.ExtLightThemeMainColor; // do not apply currently
+    extConfigObj.ExtLightThemeMainColor ?? AppConfig.ExtLightThemeMainColor;
   AppConfig.ExtDarkThemeLightColor =
-    extConfigObj.ExtDarkThemeLightColor ?? AppConfig.ExtDarkThemeLightColor; // do not apply currently
+    extConfigObj.ExtDarkThemeLightColor ?? AppConfig.ExtDarkThemeLightColor;
   AppConfig.ExtDarkThemeMainColor =
-    extConfigObj.ExtDarkThemeMainColor ?? AppConfig.ExtDarkThemeMainColor; // do not apply currently
+    extConfigObj.ExtDarkThemeMainColor ?? AppConfig.ExtDarkThemeMainColor;
   AppConfig.ExtDefaultSystemPrompt =
     extConfigObj.ExtDefaultSystemPrompt ?? AppConfig.ExtDefaultSystemPrompt;
   AppConfig.ExtDefaultQuestionPrompt =

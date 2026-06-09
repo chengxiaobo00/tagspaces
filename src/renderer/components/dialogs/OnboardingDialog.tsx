@@ -39,7 +39,7 @@ import {
 import i18n from '-/services/i18n';
 import { getDevicePaths, setLanguage } from '-/services/utils-io';
 import { CommonLocation } from '-/utils/CommonLocation';
-import { darkThemes, lightThemes } from '-/utils/Themes';
+import { getDarkThemes, getLightThemes } from '-/utils/Themes';
 import CheckIcon from '@mui/icons-material/Check';
 import FolderIcon from '@mui/icons-material/Folder';
 import Box from '@mui/material/Box';
@@ -652,7 +652,7 @@ function OnboardingDialog(props: Props) {
                     marginBottom: '20px',
                   }}
                 >
-                  {Object.entries(lightThemes).map(([key, value]) => (
+                  {Object.entries(getLightThemes()).map(([key, value]) => (
                     <ThemeTile
                       key={key}
                       themeKey={key}
@@ -678,7 +678,7 @@ function OnboardingDialog(props: Props) {
                     gap: 1,
                   }}
                 >
-                  {Object.entries(darkThemes).map(([key, value]) => (
+                  {Object.entries(getDarkThemes()).map(([key, value]) => (
                     <ThemeTile
                       key={key}
                       themeKey={key}

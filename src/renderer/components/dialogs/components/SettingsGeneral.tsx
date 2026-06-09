@@ -73,7 +73,7 @@ import CredentialsPasswordSetupDialog from '-/components/dialogs/CredentialsPass
 import { isWorkerAvailable, setLanguage } from '-/services/utils-io';
 import { TS } from '-/tagspaces.namespace';
 import { clearAllURLParams } from '-/utils/dom';
-import { darkThemes, lightThemes } from '-/utils/Themes';
+import { getDarkThemes, getLightThemes } from '-/utils/Themes';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import { Box, IconButton, InputAdornment, ListItemIcon } from '@mui/material';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -537,7 +537,7 @@ function SettingsGeneral() {
                   )
                 }
               >
-                {Object.entries(lightThemes).map((theme) => {
+                {Object.entries(getLightThemes()).map((theme) => {
                   const themeKey = theme[0];
                   const themeValue = theme[1];
                   const themeName =
@@ -596,7 +596,7 @@ function SettingsGeneral() {
                   )
                 }
               >
-                {Object.entries(darkThemes).map((theme) => {
+                {Object.entries(getDarkThemes()).map((theme) => {
                   const themeKey = theme[0];
                   const themeValue = theme[1];
                   const themeName =
