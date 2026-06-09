@@ -528,24 +528,6 @@ export function getDirectoryMenuItems(
     );
   }
 
-  if (AppConfig.isNativeMobile && cameraTakePicture) {
-    menuItems.push(
-      <MenuItem
-        key="takePicture"
-        data-tid="takePicture"
-        onClick={() => {
-          onClose();
-          cameraTakePicture();
-        }}
-      >
-        <ListItemIcon>
-          <AddExistingFileIcon />
-        </ListItemIcon>
-        <ListItemText primary={t('core:cameraTakePicture')} />
-      </MenuItem>,
-    );
-  }
-
   if (selectedEntries.length < 2 && showProperties) {
     menuItems.push(<Divider key={`divider-${menuItems.length}`} />);
     menuItems.push(

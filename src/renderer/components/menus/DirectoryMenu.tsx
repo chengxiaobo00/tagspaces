@@ -18,7 +18,6 @@
 
 import React, { useContext } from 'react';
 import { Menu } from '@mui/material';
-import { formatDateTime4Tag } from '@tagspaces/tagspaces-common/misc';
 import AppConfig from '-/AppConfig';
 import {
   extractParentDirectoryPath,
@@ -260,85 +259,6 @@ function DirectoryMenu(props: Props) {
     openImportMacTagDialog(directoryPath);
   }
 
-  function onFail(message) {
-    console.log('Camera Failed: ' + message);
-  }
-
-  function onCameraSuccess(imageURL) {
-    window.resolveLocalFileSystemURL(
-      imageURL,
-      (fp) => {
-        moveFile(fp.nativeURL);
-      },
-      () => {
-        console.log('Failed to get filesystem url');
-      },
-    );
-  }
-
-  function moveFile(filePath) {
-    const fileName =
-      'IMG_TS' +
-      AppConfig.beginTagContainer +
-      formatDateTime4Tag(new Date(), true) +
-      AppConfig.endTagContainer +
-      '.jpg';
-    const newFilePath =
-      normalizePath(directoryPath) +
-      currentLocation.getDirSeparator() +
-      fileName;
-
-    renameFilePromise(
-      filePath,
-      newFilePath,
-      currentLocation.uuid,
-      undefined,
-      false,
-    )
-      .then((newEntry) => {
-        setReflectActions({
-          action: 'add',
-          entry: newEntry,
-        });
-        showNotification(
-          t('core:fileImportedSuccess', { path: newFilePath }),
-          'default',
-          true,
-        );
-        return true;
-      })
-      .catch((error) => {
-        // TODO showAlertDialog("Saving " + filePath + " failed.");
-        console.log('Save to file ' + newFilePath + ' failed ' + error);
-        showNotification(
-          t('core:fileImportFailed', { path: newFilePath }),
-          'error',
-          true,
-        );
-        return true;
-      });
-  }
-
-  // function loadImageLocal() {
-  //   onClose();
-  //   navigator.camera.getPicture(onCameraSuccess, onFail, {
-  //     destinationType: Camera.DestinationType.FILE_URI,
-  //     sourceType: Camera.PictureSourceType.PHOTOLIBRARY
-  //   });
-  // }
-
-  function cameraTakePicture() {
-    // @ts-ignore
-    navigator.camera.getPicture(onCameraSuccess, onFail, {
-      // quality: 50,
-      // @ts-ignore
-      destinationType: Camera.DestinationType.FILE_URI, // DATA_URL, // Return base64 encoded string
-      // encodingType: Camera.EncodingType.JPEG,
-      // @ts-ignore
-      mediaType: Camera.MediaType.PICTURE, // ALLMEDIA
-    });
-  }
-
   function setFolderThumbnail() {
     const parentDirectoryPath = extractParentDirectoryPath(
       directoryPath,
@@ -440,7 +360,7 @@ function DirectoryMenu(props: Props) {
         importMacTags,
         switchPerspectives ? perspectiveSwitch : undefined,
         showProperties,
-        cameraTakePicture,
+        undefined, // cameraTakePicture removed — was using Cordova-only navigator.camera API
         openAddRemoveTagsDialog,
         openInNewWindow,
         changeFolderThumbnail,
