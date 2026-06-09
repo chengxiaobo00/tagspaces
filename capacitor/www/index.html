@@ -39,28 +39,6 @@
   <meta name="apple-mobile-web-app-title" content="TagSpaces">
   <link rel="stylesheet" type="text/css" href="dist/style.css">
   <script type="text/javascript" src="extconfig.js"></script>
-  <script>
-    // Android: detect status bar height and apply as padding if safe-area-inset is 0
-    document.addEventListener('DOMContentLoaded', function() {
-      if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) {
-        // Wait for Capacitor plugins to be ready
-        setTimeout(function() {
-          try {
-            if (window.Capacitor.Plugins && window.Capacitor.Plugins.StatusBar) {
-              window.Capacitor.Plugins.StatusBar.getInfo().then(function(info) {
-                if (info && info.height && info.height > 0) {
-                  var currentPadding = parseInt(window.getComputedStyle(document.body).paddingTop) || 0;
-                  if (currentPadding < info.height) {
-                    document.body.style.paddingTop = info.height + 'px';
-                  }
-                }
-              }).catch(function() {});
-            }
-          } catch(e) {}
-        }, 500);
-      }
-    });
-  </script>
 </head>
 
 <body style="overflow: hidden; margin: 0;">
