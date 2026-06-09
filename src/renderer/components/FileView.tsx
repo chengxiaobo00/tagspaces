@@ -174,11 +174,23 @@ function FileView(props: Props) {
         extBgndColor;
 
       const encrypted = openedEntry.isEncrypted ? '&encrypted=true' : '';
+      // On Capacitor (iOS/Android) the WKWebView origin is capacitor:// (iOS)
+      // or https://localhost (Android) and cannot read raw file:// resources
+      // out of the sandbox — extensions trying `<img src="file://...">` get
+      // "Not allowed to load local resource". Convert raw paths through
+      // Capacitor.convertFileSrc() so the iframe receives a same-scheme URL
+      // (capacitor://localhost/_capacitor_file_/... on iOS).
+      let fileUrl = openedEntry.url ? openedEntry.url : openedEntry.path;
+      if (AppConfig.isCapacitor && !/^[a-z][a-z0-9+\-.]*:\/\//i.test(fileUrl)) {
+        const Cap = (window as any).Capacitor;
+        if (Cap && Cap.convertFileSrc) {
+          const abs = fileUrl.startsWith('/') ? fileUrl : '/' + fileUrl;
+          fileUrl = Cap.convertFileSrc('file://' + abs);
+        }
+      }
       const getParams =
         '/index.html?file=' +
-        encodeURIComponent(
-          openedEntry.url ? openedEntry.url : openedEntry.path,
-        ) +
+        encodeURIComponent(fileUrl) +
         thumbParam +
         locale +
         theming +
