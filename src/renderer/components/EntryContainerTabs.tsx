@@ -177,10 +177,6 @@ function EntryContainerTabs(props: EntryContainerTabsProps) {
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
-        borderBottom:
-          openedEntry.isFile && !isPanelOpened
-            ? '1px solid ' + theme.palette.divider
-            : 'none',
       }}
     >
       <Box

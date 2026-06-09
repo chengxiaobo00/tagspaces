@@ -679,44 +679,33 @@ function EntryContainer() {
           </ErrorBoundary>
         ) : null;
 
-        if (openedEntry.isFile && isPanelOpened) {
-          return (
-            <Box sx={{ height: '100%' }}>
-              <Splitter
-                direction="horizontal"
-                size={propsSize}
-                min={150}
-                defaultSize={200}
-                onChange={setPropsSize}
-                ariaLabel={t('core:togglePreviewSize')}
-              >
-                {topPane}
-                {fileView}
-              </Splitter>
-            </Box>
-          );
-        }
-
         // Folder entry — no preview, topPane fills the container so
         // EntryContainerTabs has a bounded height and TsTabPanel can scroll.
         if (!openedEntry.isFile) {
           return <Box sx={{ height: '100%' }}>{topPane}</Box>;
         }
 
-        // File with panel closed — topPane sizes to its content (title +
-        // tab strip), fileView gets the remaining height.
+        // File entry — always wrap topPane + fileView in the same Splitter
+        // so React keeps FileView (and its iframe) mounted while the user
+        // toggles the properties panel. When the panel is closed we
+        // collapse the splitter to the natural height of the title bar
+        // and tab strip and disable dragging; the file content (size,
+        // scroll, in-flight loads) survives the toggle untouched.
+        const CLOSED_TOP_PANE_HEIGHT = 108; // title (48) + tab strip (60)
         return (
-          <Box
-            sx={{
-              height: '100%',
-              display: 'flex',
-              flexDirection: 'column',
-            }}
-          >
-            <Box sx={{ flex: '0 0 auto' }}>{topPane}</Box>
-            {fileView && (
-              <Box sx={{ flex: '1 1 auto', minHeight: 0 }}>{fileView}</Box>
-            )}
+          <Box sx={{ height: '100%' }}>
+            <Splitter
+              direction="horizontal"
+              size={isPanelOpened ? propsSize : CLOSED_TOP_PANE_HEIGHT}
+              min={150}
+              defaultSize={200}
+              onChange={setPropsSize}
+              disabled={!isPanelOpened}
+              ariaLabel={t('core:togglePreviewSize')}
+            >
+              {topPane}
+              {fileView}
+            </Splitter>
           </Box>
         );
       })()}
