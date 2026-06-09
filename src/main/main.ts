@@ -22,6 +22,7 @@ import {
 import type { UtilityProcess } from 'electron';
 import windowStateKeeper from 'electron-window-state';
 import findFreePorts from 'find-free-ports';
+import fs from 'fs';
 import path from 'path';
 import propertiesReader from 'properties-reader';
 import i18nInit from '../renderer/services/i18nInit';
@@ -685,6 +686,26 @@ app
       });
       ipcMain.on('app-data-path-request', (event) => {
         event.returnValue = app.getPath('appData');
+      });
+      // Returns the raw contents of <userData>/extconfig.json so the renderer
+      // can apply a profile-folder override that survives reinstalls. Returns
+      // an empty string when the file is missing, unreadable, or exceeds the
+      // 5 MB ceiling enforced by the renderer's loader.
+      ipcMain.on('get-user-ext-config', (event) => {
+        try {
+          const filePath = path.join(app.getPath('userData'), 'extconfig.json');
+          if (fs.existsSync(filePath)) {
+            const stat = fs.statSync(filePath);
+            if (stat.size <= 5 * 1024 * 1024) {
+              event.returnValue = fs.readFileSync(filePath, 'utf8');
+              return;
+            }
+            console.warn(`extconfig.json in userData exceeded 5 MB — ignored.`);
+          }
+        } catch (e) {
+          console.warn('get-user-ext-config failed:', e);
+        }
+        event.returnValue = '';
       });
       ipcMain.on('app-version-request', (event) => {
         event.returnValue = app.getVersion();

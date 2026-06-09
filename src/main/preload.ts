@@ -55,6 +55,7 @@ export type Channels =
   | 'load-extensions'
   | 'removeExtension'
   | 'getUserDataDir'
+  | 'get-user-ext-config'
   | 'unZip'
   | 'getDirProperties'
   | 'folderChanged'

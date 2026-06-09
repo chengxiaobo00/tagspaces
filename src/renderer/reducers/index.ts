@@ -186,56 +186,86 @@ const extConfigPath = AppConfig.isWeb
 // misconfiguration) doesn't make it into JSON.parse.
 const EXTCONFIG_MAX_SIZE = 5 * 1024 * 1024; // 5 MB
 
-const xhr = new XMLHttpRequest();
-xhr.open('GET', extConfigPath, false); // false = synchronous
-try {
-  xhr.send(); // Will pause execution here until it finishes or fails
-  // Status 200 is for HTTP servers, Status 0 is for local file:// protocol
-  if ((xhr.status === 200 || xhr.status === 0) && xhr.responseText) {
-    // Content-Type guard — only accept what the server claims is JSON.
-    // file:// responses (status 0) typically don't set a Content-Type;
-    // empty header is tolerated. We only reject when something explicit
-    // and non-JSON came back (e.g. a dev-server fallback HTML page or a
-    // CDN error page with a 200).
-    const contentType = (
-      xhr.getResponseHeader('Content-Type') || ''
-    ).toLowerCase();
-    if (contentType && !contentType.startsWith('application/json')) {
-      console.warn(
-        `extconfig.json had unexpected Content-Type ${contentType} — ignored.`,
-      );
-    } else if (xhr.responseText.length > EXTCONFIG_MAX_SIZE) {
-      console.warn(
-        `extconfig.json exceeded ${EXTCONFIG_MAX_SIZE} bytes — ignored.`,
-      );
-    } else {
-      const jsonConfig = loadJSONString(xhr.responseText);
-      // Shape guard — loadJSONString returns undefined on malformed
-      // input and may parse legitimate-looking JSON that isn't a plain
-      // object (array, primitive). configureApp expects a record-like
-      // object.
-      if (
-        jsonConfig &&
-        typeof jsonConfig === 'object' &&
-        !Array.isArray(jsonConfig)
-      ) {
-        // Log keys only — never the values. extconfig.json may contain
-        // secrets (ExtAI[].apiKey, ExtLocations[].secretAccessKey, etc.)
-        // and dumping the full object to the console exposes them in
-        // DevTools, screenshots, and shared bug-report transcripts.
-        console.log('extconfig.json loaded — keys:', Object.keys(jsonConfig));
-        configureApp(jsonConfig);
-      } else {
-        console.warn('extconfig.json had unexpected shape — ignored.');
-      }
-    }
-  } else {
-    // Handled case: File exists but returned 404, 403, etc.
-    console.warn(`extconfig.json returned status ${xhr.status}.`);
+function applyExtConfigText(text: string, source: string): boolean {
+  if (text.length > EXTCONFIG_MAX_SIZE) {
+    console.warn(
+      `extconfig.json (${source}) exceeded ${EXTCONFIG_MAX_SIZE} bytes — ignored.`,
+    );
+    return false;
   }
-} catch (error) {
-  // Handled case: File completely missing, network offline, or CORS error
-  console.warn('extconfig.json is not available or could not be loaded.');
+  const jsonConfig = loadJSONString(text);
+  // Shape guard — loadJSONString returns undefined on malformed
+  // input and may parse legitimate-looking JSON that isn't a plain
+  // object (array, primitive). configureApp expects a record-like
+  // object.
+  if (
+    jsonConfig &&
+    typeof jsonConfig === 'object' &&
+    !Array.isArray(jsonConfig)
+  ) {
+    // Log keys only — never the values. extconfig.json may contain
+    // secrets (ExtAI[].apiKey, ExtLocations[].secretAccessKey, etc.)
+    // and dumping the full object to the console exposes them in
+    // DevTools, screenshots, and shared bug-report transcripts.
+    console.log(
+      `extconfig.json (${source}) loaded — keys:`,
+      Object.keys(jsonConfig),
+    );
+    configureApp(jsonConfig);
+    return true;
+  }
+  console.warn(`extconfig.json (${source}) had unexpected shape — ignored.`);
+  return false;
+}
+
+// Electron desktop: prefer <userData>/extconfig.json so deployer or end-user
+// customisations survive app reinstalls/upgrades (the install-dir copy is
+// blown away on every package install). Falls through to the install-dir XHR
+// path below when no profile-folder file is present.
+let extConfigApplied = false;
+if (!AppConfig.isWeb && window.electronIO?.ipcRenderer?.getSync) {
+  try {
+    const profileText = window.electronIO.ipcRenderer.getSync(
+      'get-user-ext-config',
+    ) as string;
+    if (profileText) {
+      extConfigApplied = applyExtConfigText(profileText, 'userData');
+    }
+  } catch (error) {
+    console.warn('extconfig.json (userData) lookup failed:', error);
+  }
+}
+
+if (!extConfigApplied) {
+  const xhr = new XMLHttpRequest();
+  xhr.open('GET', extConfigPath, false); // false = synchronous
+  try {
+    xhr.send(); // Will pause execution here until it finishes or fails
+    // Status 200 is for HTTP servers, Status 0 is for local file:// protocol
+    if ((xhr.status === 200 || xhr.status === 0) && xhr.responseText) {
+      // Content-Type guard — only accept what the server claims is JSON.
+      // file:// responses (status 0) typically don't set a Content-Type;
+      // empty header is tolerated. We only reject when something explicit
+      // and non-JSON came back (e.g. a dev-server fallback HTML page or a
+      // CDN error page with a 200).
+      const contentType = (
+        xhr.getResponseHeader('Content-Type') || ''
+      ).toLowerCase();
+      if (contentType && !contentType.startsWith('application/json')) {
+        console.warn(
+          `extconfig.json had unexpected Content-Type ${contentType} — ignored.`,
+        );
+      } else {
+        applyExtConfigText(xhr.responseText, 'installDir');
+      }
+    } else {
+      // Handled case: File exists but returned 404, 403, etc.
+      console.warn(`extconfig.json returned status ${xhr.status}.`);
+    }
+  } catch (error) {
+    // Handled case: File completely missing, network offline, or CORS error
+    console.warn('extconfig.json is not available or could not be loaded.');
+  }
 }
 
 const blacklist = ['app'];
