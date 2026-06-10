@@ -324,18 +324,22 @@ function loadSettingsTags() {
 function getDevicePaths() {
   let paths;
   if (Capacitor.getPlatform() === 'ios') {
+    // The app's sandboxed Documents directory. iCloud Drive is resolved
+    // separately via getICloudContainer() — it is async and only available
+    // when the user is signed in to iCloud, so it can't be returned here.
     paths = {
-      Documents: '/',
-      // iCloud: will be available via Directory.Icloud if enabled
+      appDocumentsFolder: '/',
     };
   } else {
+    // Standard Android shared-storage folders. Keys deliberately match the
+    // core.json translation keys (*Folder) so auto-created locations and the
+    // onboarding slide get localized names instead of raw keys.
     paths = {
-      Photos: 'sdcard/DCIM/',
-      Pictures: 'sdcard/Pictures/',
-      Download: 'sdcard/Download/',
-      Music: 'sdcard/Music/',
-      Movies: 'sdcard/Movies/',
-      SDCard: 'sdcard/',
+      dcimFolder: 'sdcard/DCIM/',
+      documentsFolder: 'sdcard/Documents/',
+      downloadsFolder: 'sdcard/Download/',
+      picturesFolder: 'sdcard/Pictures/',
+      moviesFolder: 'sdcard/Movies/',
     };
   }
   return Promise.resolve(paths);

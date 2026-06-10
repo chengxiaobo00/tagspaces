@@ -37,7 +37,11 @@ import {
   getDefaultRegularTheme,
 } from '-/reducers/settings';
 import i18n from '-/services/i18n';
-import { getDevicePaths, setLanguage } from '-/services/utils-io';
+import {
+  getDevicePaths,
+  getICloudContainer,
+  setLanguage,
+} from '-/services/utils-io';
 import { CommonLocation } from '-/utils/CommonLocation';
 import { getDarkThemes, getLightThemes } from '-/utils/Themes';
 import CheckIcon from '@mui/icons-material/Check';
@@ -73,15 +77,22 @@ interface Props {
 // Names assigned to auto-bootstrapped locations in
 // CurrentLocationContextProvider.setDefaultLocations(). Used to identify
 // which locations were created by the bootstrap so the user can review
-// and remove any they don't want during onboarding.
+// and remove any they don't want during onboarding. Each key must match a
+// key returned by getDevicePaths() (per platform) AND a core.json
+// translation key. The list mixes desktop, iOS and Android folders — rows
+// whose key isn't present in the current device's paths are filtered out,
+// so a single ordered list drives every platform.
 const BOOTSTRAP_NAME_KEYS = [
-  'desktopFolder',
-  'documentsFolder',
-  'downloadsFolder',
-  'musicFolder',
-  'picturesFolder',
-  'videosFolder',
-  'iCloudFolder',
+  'desktopFolder', // desktop
+  'appDocumentsFolder', // iOS app sandbox Documents
+  'iCloudFolder', // iOS iCloud Drive (merged in async below)
+  'documentsFolder', // desktop + Android
+  'downloadsFolder', // desktop + Android
+  'dcimFolder', // Android camera roll
+  'picturesFolder', // desktop + Android
+  'moviesFolder', // Android
+  'musicFolder', // desktop
+  'videosFolder', // desktop
 ];
 
 type ThemeTileProps = {
@@ -209,10 +220,39 @@ function OnboardingDialog(props: Props) {
     let cancelled = false;
     getDevicePaths()
       .then((paths) => {
-        if (!cancelled && paths) setDevicePaths(paths);
+        // Merge rather than replace: on iOS the iCloud effect below may have
+        // already injected `iCloudFolder`, and a full replace would wipe it.
+        if (!cancelled && paths)
+          setDevicePaths((prev) => ({ ...prev, ...paths }));
       })
       .catch(() => {
         /* getDevicePaths is best-effort; failure leaves the list empty */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
+
+  // iOS only: iCloud Drive lives outside the app sandbox and is resolved
+  // asynchronously (requires the user to be signed in to iCloud), so it is
+  // not part of getDevicePaths(). Resolve it separately and merge it into the
+  // device-path map under the `iCloudFolder` key so slide 2 offers it as a
+  // one-tap location alongside the app's Documents folder.
+  useEffect(() => {
+    if (!open || !AppConfig.isCapacitoriOS) return;
+    let cancelled = false;
+    getICloudContainer()
+      .then((result) => {
+        if (!cancelled && result && result.available && result.documentsPath) {
+          setDevicePaths((prev) => ({
+            ...prev,
+            iCloudFolder: result.documentsPath as string,
+          }));
+        }
+        return true;
+      })
+      .catch(() => {
+        /* iCloud is optional; failure simply hides the row */
       });
     return () => {
       cancelled = true;
@@ -516,7 +556,16 @@ function OnboardingDialog(props: Props) {
                       dense
                       sx={{
                         textAlign: 'left',
-                        maxHeight: 180,
+                        // Grow the list to use the available height instead of a
+                        // fixed cap. On mobile the dialog is fullScreen, so size
+                        // relative to the viewport (100dvh) minus the space taken
+                        // by the slide's image/text above and the action bar
+                        // below; the list scrolls internally only if it still
+                        // can't fit. On desktop the dialog has a bounded height,
+                        // so keep a fixed cap. The old 180px clipped the list to
+                        // ~3 rows, hiding Pictures and Movies below the fold.
+                        minHeight: smallScreen ? 160 : undefined,
+                        maxHeight: smallScreen ? 'calc(100dvh - 400px)' : 360,
                         overflowY: 'auto',
                         border: '1px solid',
                         borderColor: 'divider',
