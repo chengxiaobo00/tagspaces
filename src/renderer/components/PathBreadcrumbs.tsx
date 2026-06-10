@@ -158,7 +158,8 @@ function PathBreadcrumbs(props: Props) {
 
   function getBreadcrumbs() {
     let breadcrumbs = [];
-    if (pathParts.length > 0) {
+    // In mobile mode show only the current folder — skip the parent-path chips.
+    if (isDesktopMode && pathParts.length > 0) {
       breadcrumbs = pathParts.map((pathPart, index) => {
         const folderName = extractShortDirectoryName(
           pathPart,
