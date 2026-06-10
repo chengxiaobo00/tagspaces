@@ -375,41 +375,32 @@ function FolderContainer({ toggleDrawer, drawerOpened, hidden }: Props) {
                 flexDirection: 'column',
               }}
             >
-              {smallScreen ? (
-                <TsIconButton
-                  tooltip={`${t('core:openSearch')} (${openSearchKeyBinding})`}
-                  data-tid="toggleSearch"
-                  onClick={openSearchMode}
-                  sx={{
-                    maxWidth: 100,
-                    WebkitAppRegion: 'no-drag',
-                  }}
-                >
-                  <SearchIcon />
-                </TsIconButton>
-              ) : (
-                <TsButton
-                  data-tid="toggleSearch"
-                  onClick={openSearchMode}
-                  startIcon={<SearchIcon />}
-                  sx={{
-                    marginTop: '-2px',
-                    marginRight: '5px',
-                    minWidth: '80px',
-                    maxHeight: 32,
-                    width: 'stretch',
-                    maxWidth: '200px',
-                    margin: '0 auto',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    WebkitAppRegion: 'no-drag',
-                  }}
-                >
-                  {t('core:searchTitle')}
-                  <Box sx={{ width: 10 }} />
-                  {openSearchKeyBinding}
-                </TsButton>
-              )}
+              <TsButton
+                data-tid="toggleSearch"
+                onClick={openSearchMode}
+                startIcon={<SearchIcon />}
+                sx={{
+                  marginTop: '-2px',
+                  marginRight: 0,
+                  marginLedt: 0,
+                  minWidth: '80px',
+                  maxHeight: 32,
+                  width: 'stretch',
+                  maxWidth: '200px',
+                  margin: '0 auto',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  WebkitAppRegion: 'no-drag',
+                }}
+              >
+                {t('core:searchTitle')}
+                {isDesktopMode && (
+                  <>
+                    <Box sx={{ width: 10 }} />
+                    {openSearchKeyBinding}{' '}
+                  </>
+                )}
+              </TsButton>
             </Box>
             {progress?.length > 0 && (
               <TsIconButton
