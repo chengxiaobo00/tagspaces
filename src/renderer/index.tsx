@@ -25,13 +25,11 @@ import {
   seedKeySourceFromProbe,
 } from './services/credentialsBootstrap';
 import { installTabGuardListener } from './services/credentialsTabGuard';
-import { installIosScrollGuard } from './services/iosScrollGuard';
 import UnlockScreen from './components/UnlockScreen';
 import './app.global.css';
 
 installGlobalErrorHandlers();
 installTabGuardListener();
-installIosScrollGuard();
 
 document.addEventListener('contextmenu', (event) => event.preventDefault());
 
