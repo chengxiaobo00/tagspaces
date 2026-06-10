@@ -380,6 +380,8 @@ function FolderContainer({ toggleDrawer, drawerOpened, hidden }: Props) {
                 onClick={openSearchMode}
                 startIcon={<SearchIcon />}
                 sx={{
+                  borderColor: theme.palette.divider,
+                  color: theme.palette.divider,
                   marginTop: '-2px',
                   marginRight: 0,
                   marginLedt: 0,

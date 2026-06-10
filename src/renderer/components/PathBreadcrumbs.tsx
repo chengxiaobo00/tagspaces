@@ -65,11 +65,16 @@ const StyledBreadcrumb = styled(Chip)(({ theme }) => {
 
 const StyledBreadcrumbs = styled(Breadcrumbs)(({ theme }) => {
   return {
-    overflowX: 'scroll',
-    marginTop: '8px',
+    // auto (not scroll) so a horizontal scrollbar is reserved only when the
+    // path actually overflows — a permanent scrollbar pinned the chips to the
+    // top and broke vertical centering.
+    overflowX: 'auto',
+    display: 'flex',
+    alignItems: 'center',
     WebkitAppRegion: 'no-drag',
     '& ol': {
       flexWrap: 'nowrap',
+      alignItems: 'center',
     },
   };
 }) as typeof Breadcrumbs; // TypeScript only: need a type cast here because https://github.com/Microsoft/TypeScript/issues/26591
