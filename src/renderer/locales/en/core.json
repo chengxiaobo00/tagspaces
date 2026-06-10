@@ -568,6 +568,7 @@
   "userName": "Username",
   "openLink": "Open Link",
   "invalidLink": "Invalid Link",
+  "noLocationToOpenFile": "Cannot open the file - please add a local location first.",
   "link": "Link",
   "desktopFolder": "Desktop",
   "documentsFolder": "Documents",

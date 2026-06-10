@@ -50,6 +50,41 @@ export function getFirstReadWriteLocation(
 }
 
 /**
+ * Find the (local) location whose root path contains the given absolute path.
+ * Used when opening a file handed over by the OS (Finder double-click / CLI)
+ * where we only have an absolute filesystem path and no location id.
+ * Returns the deepest matching location (longest path prefix) so nested
+ * locations resolve to the most specific one.
+ * @param locations - Array of locations to search
+ * @param entryPath - Absolute filesystem path of the file/folder
+ * @returns Matching local location, or undefined if none contains the path
+ */
+export function findLocationContainingPath(
+  locations: CommonLocation[],
+  entryPath: string,
+): CommonLocation | undefined {
+  if (!locations || !entryPath) return undefined;
+  const { locationType } = require('@tagspaces/tagspaces-common/misc');
+  const norm = (p: string) => (p || '').replace(/\\/g, '/').replace(/\/+$/, '');
+  const target = norm(entryPath);
+  let match: CommonLocation | undefined;
+  let matchLen = -1;
+  for (const location of locations) {
+    if (location.type !== locationType.TYPE_LOCAL) continue;
+    const root = norm(location.path);
+    if (!root) continue;
+    if (
+      (target === root || target.startsWith(root + '/')) &&
+      root.length > matchLen
+    ) {
+      match = location;
+      matchLen = root.length;
+    }
+  }
+  return match;
+}
+
+/**
  * Find location by type
  * @param locations - Array of locations to search
  * @param type - Location type to find

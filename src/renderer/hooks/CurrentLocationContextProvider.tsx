@@ -39,6 +39,7 @@ import {
   canMoveUp,
   findLocalLocation as findLocalLocationUtil,
   findLocationById,
+  findLocationContainingPath,
   getDirSeparatorForLocation,
   getFirstReadWriteLocation,
   getLocationPathString,
@@ -67,6 +68,7 @@ type CurrentLocationContextData = {
   persistTagsInSidecarFile: boolean;
   getLocationPath: (location: CommonLocation) => Promise<string>;
   findLocation: (locationID?: string) => CommonLocation | undefined;
+  findLocationByPath: (entryPath: string) => CommonLocation | undefined;
   getDirSeparator: (locationID?: string) => string;
   findLocalLocation: () => CommonLocation;
   changeLocation: (location: CommonLocation, skipInitDirList?: boolean) => void;
@@ -109,6 +111,7 @@ export const CurrentLocationContext = createContext<CurrentLocationContextData>(
     persistTagsInSidecarFile: true,
     getLocationPath: undefined,
     findLocation: undefined,
+    findLocationByPath: undefined,
     getDirSeparator: undefined,
     findLocalLocation: undefined,
     changeLocation: () => {},
@@ -293,6 +296,10 @@ export const CurrentLocationContextProvider = ({
       locationID,
       currentLocationId.current,
     );
+  }
+
+  function findLocationByPath(entryPath: string): CommonLocation | undefined {
+    return findLocationContainingPath(allLocations.current, entryPath);
   }
 
   function getDirSeparator(locationID?: string): string {
@@ -565,6 +572,7 @@ export const CurrentLocationContextProvider = ({
       persistTagsInSidecarFile,
       getLocationPath,
       findLocation,
+      findLocationByPath,
       getDirSeparator,
       findLocalLocation,
       changeLocation,

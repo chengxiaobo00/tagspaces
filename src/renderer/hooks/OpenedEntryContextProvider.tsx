@@ -164,8 +164,13 @@ export const OpenedEntryContextProvider = ({
   const dispatch: AppDispatch = useDispatch();
   const { t } = useTranslation();
 
-  const { findLocation, openLocation, getLocationPath, getFirstRWLocation } =
-    useCurrentLocationContext();
+  const {
+    findLocation,
+    findLocationByPath,
+    findLocalLocation,
+    openLocation,
+    getLocationPath,
+  } = useCurrentLocationContext();
   const { getMetadata } = useIOActionsContext();
   const {
     currentDirectoryPath,
@@ -209,7 +214,12 @@ export const OpenedEntryContextProvider = ({
         }, 1000);
       } else if (cmdOpen) {
         setTimeout(() => {
-          openLink('ts://?cmdopen=' + cmdOpen, { fullWidth: true });
+          // Re-encode: cmdOpen is an already-decoded absolute path and may
+          // contain characters (#, &, ?, =, spaces) that would otherwise break
+          // URL parsing in parseTsLink and truncate the path.
+          openLink('ts://?cmdopen=' + encodeURIComponent(cmdOpen), {
+            fullWidth: true,
+          });
         }, 1000);
       }
     }
@@ -734,10 +744,40 @@ export const OpenedEntryContextProvider = ({
       };
 
       if (parsed.kind === 'cmd' && parsed.cmdOpen) {
-        const locationId = parsed.lid || getFirstRWLocation()?.uuid;
-        getAllPropertiesPromise(parsed.cmdOpen, locationId)
+        // A file/folder handed over by the OS (Finder double-click / CLI) is an
+        // absolute path with no location id. Resolve it to a configured location
+        // so the file manager has a current location + directory to render into
+        // — without this the entry is loaded but there is no view to show it in
+        // (empty window). Prefer an explicit lid, then the location that
+        // contains the path, then the first writable location as a fallback.
+        const cmdPath = parsed.cmdOpen;
+        // A cmd/Finder path is always a local filesystem path, so it can only be
+        // hosted by a *local* location (a cloud S3/WebDAV location can't read a
+        // local absolute path). Prefer the location that contains the path, then
+        // any local location as a generic IO host. An explicit lid is honored
+        // as-is to allow cloud targets passed deliberately via the CLI.
+        const location =
+          (parsed.lid && findLocation(parsed.lid)) ||
+          findLocationByPath(cmdPath) ||
+          findLocalLocation();
+        if (!location) {
+          showNotification(t('core:noLocationToOpenFile'), 'warning', true);
+          return;
+        }
+        getAllPropertiesPromise(cmdPath, location.uuid)
           .then((fsEntry: TS.FileSystemEntry) => {
-            if (fsEntry) {
+            if (!fsEntry) {
+              showNotification(t('Missing file or folder'), 'warning', true);
+              return true;
+            }
+            if (!currentLocation || currentLocation.uuid !== location.uuid) {
+              openLocation(location, true);
+            }
+            const sep = location.getDirSeparator();
+            const dirPath = fsEntry.isFile
+              ? extractContainingDirectoryPath(fsEntry.path, sep)
+              : fsEntry.path;
+            return openDirectory(dirPath, undefined, location).then(() => {
               if (fsEntry.isFile) {
                 openFsEntry(
                   fsEntry,
@@ -746,17 +786,13 @@ export const OpenedEntryContextProvider = ({
                 setSelectedEntries([fsEntry]);
                 setEntryInFullWidth(options.fullWidth);
               } else {
-                // Navigate the file manager AND also set the folder as the
-                // opened entry so the details panel (description tab, etc.)
-                // refreshes to the new folder. Matches the behavior of the
-                // 'ts' kind path for folder targets.
-                openDirectory(fsEntry.path).then(() => {
-                  openEntry(fsEntry);
-                  return true;
-                });
+                // Folder target: navigation above already listed it; also set it
+                // as the opened entry so the details panel refreshes. Matches the
+                // behavior of the 'ts' kind path for folder targets.
+                openEntry(fsEntry);
               }
-            }
-            return true;
+              return true;
+            });
           })
           .catch(() => {
             showNotification(t('Missing file or folder'), 'warning', true);
