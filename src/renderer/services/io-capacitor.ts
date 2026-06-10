@@ -1080,9 +1080,33 @@ function selectDirectoryDialog() {
     return FilePicker.pickDirectory().then((result) => {
       if (result && result.path) {
         let path = result.path;
-        // Normalize the path for TagSpaces internal format
+        // Normalize the path for TagSpaces internal format.
+        // Three shapes the picker can return depending on the device, the
+        // Android version, and whether MANAGE_EXTERNAL_STORAGE is granted:
+        //   1. file:///storage/emulated/0/<rel>        (older / with all-files perm)
+        //   2. /storage/emulated/0/<rel>                (rare; absolute)
+        //   3. content://com.android.externalstorage.documents/tree/<volume>%3A<rel>
+        //      — SAF tree URI on Android 11+. `primary` = internal storage,
+        //      anything else = removable SD card / OTG identified by volume UUID.
         path = path.replace('file:///storage/emulated/0', 'sdcard');
         path = path.replace('/storage/emulated/0', 'sdcard');
+        const SAF_TREE_PREFIX =
+          'content://com.android.externalstorage.documents/tree/';
+        if (path.startsWith(SAF_TREE_PREFIX)) {
+          const decoded = decodeURIComponent(
+            path.slice(SAF_TREE_PREFIX.length),
+          );
+          // decoded shape: "primary:DCIM/foo" or "1234-5678:Photos"
+          const colon = decoded.indexOf(':');
+          if (colon > 0) {
+            const volume = decoded.slice(0, colon);
+            const rel = decoded.slice(colon + 1);
+            path =
+              volume === 'primary'
+                ? 'sdcard' + (rel ? '/' + rel : '')
+                : '/storage/' + volume + (rel ? '/' + rel : '');
+          }
+        }
         return [path];
       }
       return Promise.reject('No folder selected');
