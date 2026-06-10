@@ -18,18 +18,20 @@
 
 import { createRoot } from 'react-dom/client';
 // import Root from './containers/Root';
-import configureStore from './store/configureStore';
-import { installGlobalErrorHandlers } from './services/globalErrorHandlers';
+import './app.global.css';
+import UnlockScreen from './components/UnlockScreen';
 import {
   probeBootstrap,
   seedKeySourceFromProbe,
 } from './services/credentialsBootstrap';
 import { installTabGuardListener } from './services/credentialsTabGuard';
-import UnlockScreen from './components/UnlockScreen';
-import './app.global.css';
+import { installGlobalErrorHandlers } from './services/globalErrorHandlers';
+import { installIosScrollGuard } from './services/iosScrollGuard';
+import configureStore from './store/configureStore';
 
 installGlobalErrorHandlers();
 installTabGuardListener();
+installIosScrollGuard();
 
 document.addEventListener('contextmenu', (event) => event.preventDefault());
 
