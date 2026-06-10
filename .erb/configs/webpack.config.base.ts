@@ -38,6 +38,20 @@ const configuration: webpack.Configuration = {
           },
         },
       },
+      // Don't require fully-specified extensions for ESM (.mjs) imports.
+      // @mui/material@9's .mjs files import e.g. 'react-transition-group/
+      // TransitionGroupContext' without a file extension; webpack's strict ESM
+      // resolution otherwise fails them (broke build:dll and the prod renderer
+      // build). Lives in the base config so every config that merges it —
+      // renderer dev/prod, main, and the DLL (which borrows renderer.dev's
+      // merged module) — inherits the fix. (cordova/capacitor/web carry their
+      // own equivalent copy.)
+      {
+        test: /\.m?js/,
+        resolve: {
+          fullySpecified: false,
+        },
+      },
     ],
   },
 
