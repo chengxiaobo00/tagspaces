@@ -344,6 +344,8 @@
   "themeDarkSelector": "Preferred dark theme",
   "darkScheme": "dark",
   "regularScheme": "light",
+  "lightThemes": "Light themes",
+  "darkThemes": "Dark themes",
   "systemScheme": "match operating system",
   "moveUp": "Move Up",
   "moveDown": "Move Down",

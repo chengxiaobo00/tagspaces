@@ -642,7 +642,7 @@ function OnboardingDialog(props: Props) {
                   variant="subtitle2"
                   sx={{ textAlign: 'left', marginBottom: '6px' }}
                 >
-                  {t('core:light')}
+                  {t('core:lightThemes')}
                 </Typography>
                 <Box
                   sx={{
@@ -669,7 +669,7 @@ function OnboardingDialog(props: Props) {
                   variant="subtitle2"
                   sx={{ textAlign: 'left', marginBottom: '6px' }}
                 >
-                  {t('core:dark')}
+                  {t('core:darkThemes')}
                 </Typography>
                 <Box
                   sx={{
