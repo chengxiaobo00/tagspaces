@@ -21,10 +21,10 @@ import { BetaLabel } from '-/components/HelperComponents';
 import PathBreadcrumbs from '-/components/PathBreadcrumbs';
 import RenderPerspective from '-/components/RenderPerspective';
 import SearchBox from '-/components/SearchBox';
-import TsTooltip from '-/components/TsTooltip';
 import TsButton from '-/components/TsButton';
 import TsIconButton from '-/components/TsIconButton';
 import TsMenuList from '-/components/TsMenuList';
+import TsTooltip from '-/components/TsTooltip';
 import { AIProvider } from '-/components/chat/ChatTypes';
 import { adjustKeyBinding } from '-/components/dialogs/KeyboardDialog';
 import { useFileUploadDialogContext } from '-/components/dialogs/hooks/useFileUploadDialogContext';
@@ -352,7 +352,7 @@ function FolderContainer({ toggleDrawer, drawerOpened, hidden }: Props) {
         >
           <GoBackIcon />
         </TsIconButton>
-        {smallScreen && (
+        {!smallScreen && (
           <TsIconButton
             tooltip={t('core:goforward') + ' - BETA'}
             id="goForwardButton"
