@@ -17,8 +17,8 @@ import {
 } from '-/components/CommonIcons';
 import { ProLabel } from '-/components/HelperComponents';
 import TsMenuList from '-/components/TsMenuList';
-import MenuKeyBinding from '-/components/menus/MenuKeyBinding';
 import { useMenuContext } from '-/components/dialogs/hooks/useMenuContext';
+import MenuKeyBinding from '-/components/menus/MenuKeyBinding';
 import { useCurrentLocationContext } from '-/hooks/useCurrentLocationContext';
 import { useFullScreenContext } from '-/hooks/useFullScreenContext';
 import { useIOActionsContext } from '-/hooks/useIOActionsContext';
@@ -31,12 +31,12 @@ import {
   isDesktopMode,
   isHideProFeatures,
 } from '-/reducers/settings';
-import { TS } from '-/tagspaces.namespace';
 import {
   createNewInstance,
   openDirectoryMessage,
   openFileMessage,
 } from '-/services/utils-io';
+import { TS } from '-/tagspaces.namespace';
 import {
   Divider,
   ListItemIcon,
@@ -419,6 +419,38 @@ function EntryContainerMenu(props: Props) {
         <MenuKeyBinding keyBinding={keyBindings['reloadDocument']} />
       </MenuItem>,
     );
+    // Bookmarking is a Pro feature. Hide the entry entirely when the user
+    // opted out of Pro teasers (isHideProFeatures); otherwise show it —
+    // functional on Pro, disabled with a PRO badge on the free version.
+    if (!hideProFeatures || Pro) {
+      menuItems.push(
+        <MenuItem
+          key={'toggleBookmarkKey'}
+          data-tid="toggleBookmarkTID"
+          disabled={!Pro}
+          aria-label={t(
+            isBookmarked ? 'core:removeBookmark' : 'core:addBookmark',
+          )}
+          onClick={toggleBookmark}
+        >
+          <ListItemIcon>
+            {isBookmarked ? (
+              <EntryBookmarkIcon sx={{ color: 'primary.main' }} />
+            ) : (
+              <EntryBookmarkAddIcon />
+            )}
+          </ListItemIcon>
+          <ListItemText
+            primary={
+              <>
+                {t(isBookmarked ? 'core:removeBookmark' : 'core:addBookmark')}
+                {!Pro && <ProLabel />}
+              </>
+            }
+          />
+        </MenuItem>,
+      );
+    }
     menuItems.push(<Divider key={`divider-${menuItems.length}`} />);
     menuItems.push(
       <MenuItem
