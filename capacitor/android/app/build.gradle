@@ -18,7 +18,13 @@ android {
     }
     buildTypes {
         release {
-            minifyEnabled false
+            // R8 code + resource shrinking for the Play Store release. Capacitor
+            // and Cordova load plugins reflectively by class name, so the keep
+            // rules in proguard-rules.pro are REQUIRED — without them R8 strips
+            // or renames plugin classes and they fail to register at runtime.
+            // Re-test every plugin on a release build after touching this.
+            minifyEnabled true
+            shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
