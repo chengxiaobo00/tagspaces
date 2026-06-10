@@ -23,7 +23,13 @@ const config: CapacitorConfig = {
   },
   ios: {
     scheme: 'TagSpaces',
-    contentInset: 'always',
+    // 'never' — let the web layer own safe-area handling. The native side
+    // already positions the WebView below the status bar (StatusBar
+    // overlaysWebView:false) and the body pads itself via env(safe-area-inset-*)
+    // in index.html. 'always' added a *third*, redundant inset, so WKWebView
+    // pushed the whole content down by ~the status-bar height (~20px) — the
+    // "shift in the opposite direction".
+    contentInset: 'never',
   },
 };
 
