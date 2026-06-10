@@ -3,6 +3,8 @@ import {
   CloseIcon,
   DeleteIcon,
   DownloadIcon,
+  EntryBookmarkAddIcon,
+  EntryBookmarkIcon,
   FullScreenIcon,
   FullWidthIcon,
   LinkIcon,
@@ -13,6 +15,7 @@ import {
   ReloadIcon,
   RenameIcon,
 } from '-/components/CommonIcons';
+import { ProLabel } from '-/components/HelperComponents';
 import TsMenuList from '-/components/TsMenuList';
 import MenuKeyBinding from '-/components/menus/MenuKeyBinding';
 import { useMenuContext } from '-/components/dialogs/hooks/useMenuContext';
@@ -21,11 +24,14 @@ import { useFullScreenContext } from '-/hooks/useFullScreenContext';
 import { useIOActionsContext } from '-/hooks/useIOActionsContext';
 import { useNotificationContext } from '-/hooks/useNotificationContext';
 import { useOpenedEntryContext } from '-/hooks/useOpenedEntryContext';
+import { Pro } from '-/pro';
 import {
   getKeyBindingObject,
   getWarningOpeningFilesExternally,
   isDesktopMode,
+  isHideProFeatures,
 } from '-/reducers/settings';
+import { TS } from '-/tagspaces.namespace';
 import {
   createNewInstance,
   openDirectoryMessage,
@@ -39,6 +45,7 @@ import {
   MenuItem,
 } from '@mui/material';
 import { extractDirectoryName } from '@tagspaces/tagspaces-common/paths';
+import { useContext, useReducer } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
 
@@ -74,9 +81,30 @@ function EntryContainerMenu(props: Props) {
   const { deleteFile, downloadFsEntry } = useIOActionsContext();
   const { openConfirmDialog } = useNotificationContext();
   const desktopMode = useSelector(isDesktopMode);
+  const hideProFeatures: boolean = useSelector(isHideProFeatures);
   const warningOpeningFilesExternally = useSelector(
     getWarningOpeningFilesExternally,
   );
+  const [, forceUpdate] = useReducer((x) => x + 1, 0);
+
+  const bookmarksContext = Pro?.contextProviders?.BookmarksContext
+    ? useContext<TS.BookmarksContextData>(Pro.contextProviders.BookmarksContext)
+    : undefined;
+
+  const isBookmarked =
+    !!bookmarksContext && bookmarksContext.haveBookmark(openedEntry.path);
+
+  const toggleBookmark = () => {
+    if (Pro && bookmarksContext) {
+      if (isBookmarked) {
+        bookmarksContext.delBookmark(openedEntry.path);
+      } else {
+        bookmarksContext.setBookmark(openedEntry.path, sharingLink);
+      }
+      forceUpdate();
+    }
+    handleClose();
+  };
 
   function setDeleteEntryModalOpened() {
     const title = openedEntry.isFile
@@ -195,6 +223,38 @@ function EntryContainerMenu(props: Props) {
         <ListItemText primary={t('core:downloadFile')} />
       </MenuItem>,
     );
+    // Bookmarking is a Pro feature. Hide the entry entirely when the user
+    // opted out of Pro teasers (isHideProFeatures); otherwise show it —
+    // functional on Pro, disabled with a PRO badge on the free version.
+    if (!hideProFeatures || Pro) {
+      menuItems.push(
+        <MenuItem
+          key={'toggleBookmarkKey'}
+          data-tid="toggleBookmarkTID"
+          disabled={!Pro}
+          aria-label={t(
+            isBookmarked ? 'core:removeBookmark' : 'core:addBookmark',
+          )}
+          onClick={toggleBookmark}
+        >
+          <ListItemIcon>
+            {isBookmarked ? (
+              <EntryBookmarkIcon sx={{ color: 'primary.main' }} />
+            ) : (
+              <EntryBookmarkAddIcon />
+            )}
+          </ListItemIcon>
+          <ListItemText
+            primary={
+              <>
+                {t(isBookmarked ? 'core:removeBookmark' : 'core:addBookmark')}
+                {!Pro && <ProLabel />}
+              </>
+            }
+          />
+        </MenuItem>,
+      );
+    }
     menuItems.push(<Divider key={`divider-${menuItems.length}`} />);
     menuItems.push(
       <MenuItem

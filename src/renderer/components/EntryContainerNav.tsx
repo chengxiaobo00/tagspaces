@@ -66,7 +66,7 @@ function EntryContainerNav(props: Props) {
         alignItems: 'center',
       }}
     >
-      {!hideProFeatures && (
+      {!hideProFeatures && !smallScreen && (
         <ProTooltip tooltip={t('core:toggleBookmark')}>
           <TsIconButton
             data-tid="toggleBookmarkTID"
