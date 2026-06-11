@@ -1210,9 +1210,19 @@ export function downloadFile(
   filePath: string,
   fileUrl: string,
   dirSeparator: string,
-): number {
+): number | Promise<{ path: string; shared: boolean }> {
   const entryName = `${baseName(filePath, dirSeparator)}`;
   const fileName = extractFileName(entryName, dirSeparator);
+
+  if (AppConfig.isCapacitor) {
+    if (!fileUrl) {
+      console.log('Can only download HTTP/HTTPS URIs');
+      return -1;
+    }
+    const ioAPI = require('-/services/io-capacitor');
+    // Returns a promise so the caller can confirm start/completion to the user.
+    return ioAPI.downloadFile(fileName, fileUrl);
+  }
 
   if (AppConfig.isNativeMobile) {
     if (fileUrl) {

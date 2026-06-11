@@ -1183,6 +1183,78 @@ function shareFiles(files) {
   });
 }
 
+/**
+ * Download a file under Capacitor. Replaces the Cordova-only
+ * `window.plugins.Downloader`, which is undefined under Capacitor.
+ *
+ * Fetches the URL inside the WebView (handles blob:/data: object URLs used for
+ * encrypted files, signed S3 URLs, and plain http(s)), then writes the bytes
+ * via @capacitor/filesystem.
+ *
+ * - Android: saves directly to the public `Download/` folder.
+ * - iOS: there is no public Downloads folder. We write the file to the app's
+ *   Cache directory and present the native share sheet so the user can pick a
+ *   destination ("Save to Files", AirDrop, etc.) instead of it disappearing
+ *   into the sandboxed app folder.
+ *
+ * Resolves with the result path (and, on iOS, whether the share sheet was
+ * shown), or rejects on a fetch/write failure so the caller can notify.
+ */
+function downloadFile(fileName, fileUrl) {
+  const platform = Capacitor.getPlatform();
+
+  return fetch(fileUrl)
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error('HTTP ' + response.status);
+      }
+      return response.blob();
+    })
+    .then((blob) => blobToBase64(blob))
+    .then((base64Data) => {
+      if (platform === 'ios') {
+        // Stage in the cache dir, then let the user choose where to save it.
+        return Filesystem.writeFile({
+          path: fileName,
+          data: base64Data,
+          directory: Directory.Cache,
+          recursive: true,
+        }).then((result) =>
+          Share.share({
+            title: fileName,
+            url: result.uri,
+            dialogTitle: 'Save or share file',
+          })
+            .then(() => ({ path: result.uri, shared: true }))
+            .catch((err) => {
+              // User cancelling the share sheet rejects — treat as a no-op,
+              // the file is still in the cache dir at result.uri.
+              console.log('Share sheet dismissed: ' + err);
+              return { path: result.uri, shared: false };
+            }),
+        );
+      }
+      // Android: write straight into the public Downloads folder.
+      return Filesystem.writeFile({
+        path: 'Download/' + fileName,
+        data: base64Data,
+        directory: Directory.ExternalStorage,
+        recursive: true,
+      }).then((result) => ({
+        path: result.uri || 'Download/' + fileName,
+        shared: false,
+      }));
+    })
+    .then((result) => {
+      console.log('File downloaded to: ' + result.path);
+      return result;
+    })
+    .catch((err) => {
+      console.error('Capacitor downloadFile failed: ' + err);
+      throw err;
+    });
+}
+
 // --- Auto-initialization ---
 // In Capacitor, the native bridge is ready immediately when JS executes
 // (unlike Cordova which requires waiting for the 'deviceready' event).
@@ -1245,4 +1317,5 @@ export {
   openUrl,
   focusWindow,
   shareFiles,
+  downloadFile,
 };

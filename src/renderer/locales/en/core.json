@@ -208,6 +208,8 @@
   "openFileWith": "Open with…",
   "downloadFile": "Download File",
   "downloadFiles": "Download Files",
+  "downloadStarted": "Downloading {{fileName}}…",
+  "downloadSuccessful": "{{fileName}} downloaded",
   "openFileNatively": "Open File Natively",
   "openParentFolder": "Open Parent Folder",
   "showInFileManager": "Show in File Manager",

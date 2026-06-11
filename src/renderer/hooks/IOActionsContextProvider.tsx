@@ -1022,44 +1022,53 @@ export const IOActionsContextProvider = ({
 
   function downloadFsEntry(fsEntry: TS.FileSystemEntry) {
     const loc = findLocation(fsEntry.locationID);
-    if (loc) {
-      if (fsEntry.isEncrypted) {
-        loc
-          .getFileContentPromise(fsEntry.path, 'arraybuffer')
-          .then((arrayBuffer) => {
-            const url = window.URL || window.webkitURL;
-            const openedEntryUrl = url.createObjectURL(new Blob([arrayBuffer]));
-            const downloadResult = downloadFile(
-              fsEntry.path,
-              openedEntryUrl,
-              currentLocation?.getDirSeparator(),
-            );
-            if (downloadResult === -1) {
-              showNotification(t('core:cantDownloadLocalFile'));
-            }
-          });
-      } else if (loc.haveObjectStoreSupport()) {
-        loc.generateURLforPath(fsEntry.path, 86400).then((url) => {
-          const downloadResult = downloadFile(
-            fsEntry.path,
-            url,
-            currentLocation?.getDirSeparator(),
-          );
-          if (downloadResult === -1) {
-            showNotification(t('core:cantDownloadLocalFile'));
-          }
-        });
-      } else {
-        const downloadResult = downloadFile(
-          fsEntry.path,
-          fsEntry.url,
-          currentLocation?.getDirSeparator(),
-        );
-        if (downloadResult === -1) {
-          showNotification(t('core:cantDownloadLocalFile'));
-        }
-      }
+    if (!loc) {
+      return;
     }
+
+    // Resolve the URL to download from, depending on the entry/location type.
+    let urlPromise: Promise<string>;
+    if (fsEntry.isEncrypted) {
+      urlPromise = loc
+        .getFileContentPromise(fsEntry.path, 'arraybuffer')
+        .then((arrayBuffer) => {
+          const url = window.URL || window.webkitURL;
+          return url.createObjectURL(new Blob([arrayBuffer]));
+        });
+    } else if (loc.haveObjectStoreSupport()) {
+      urlPromise = loc.generateURLforPath(fsEntry.path, 86400);
+    } else {
+      urlPromise = Promise.resolve(fsEntry.url);
+    }
+
+    const fileName = extractFileName(
+      fsEntry.path,
+      currentLocation?.getDirSeparator(),
+    );
+
+    urlPromise.then((url) => {
+      const downloadResult = downloadFile(
+        fsEntry.path,
+        url,
+        currentLocation?.getDirSeparator(),
+      );
+      if (downloadResult === -1) {
+        showNotification(t('core:cantDownloadLocalFile'));
+      } else if (downloadResult instanceof Promise) {
+        // Native mobile (Capacitor): confirm start, then success/failure.
+        showNotification(t('core:downloadStarted', { fileName }));
+        downloadResult
+          .then(() => {
+            showNotification(t('core:downloadSuccessful', { fileName }));
+            return true;
+          })
+          .catch((e) => {
+            showNotification(
+              t('core:downloadFileError', { message: e.message }),
+            );
+          });
+      }
+    });
   }
   /**
    * with HTML5 Files API
