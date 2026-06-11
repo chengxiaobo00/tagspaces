@@ -60,7 +60,7 @@ function EntryContainerNav(props: Props) {
       sx={{
         zIndex: 1,
         position: 'absolute',
-        top: 5,
+        top: 4,
         right: 5,
         display: 'flex',
         alignItems: 'center',
