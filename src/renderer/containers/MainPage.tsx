@@ -291,20 +291,43 @@ function MainPage() {
   );
 
   function renderContainers() {
-    if (smallScreen && openedEntry) {
+    const entryContainer = (
+      <FilePropertiesContextProvider>
+        {openedEntry ? (
+          <FullScreenContextProvider>
+            <EntryContainer key="EntryContainerID" />
+          </FullScreenContextProvider>
+        ) : (
+          <div />
+        )}
+      </FilePropertiesContextProvider>
+    );
+
+    if (smallScreen) {
+      // On small screens the file viewer is shown full-screen on top of the
+      // folder list (instead of side-by-side via the Splitter). Keep
+      // FolderContainer mounted at a stable tree position — just hidden —
+      // whether or not a file is open, so opening/closing a file does not
+      // remount the perspective and reset its state (pagination, scroll).
       return (
-        <>
+        <Box sx={{ position: 'relative', height: '100%', width: '100%' }}>
           <FolderContainer
-            hidden
+            hidden={!!openedEntry}
             toggleDrawer={toggleDrawer}
             drawerOpened={drawerOpened}
           />
-          <FilePropertiesContextProvider>
-            <FullScreenContextProvider>
-              <EntryContainer key="EntryContainerID" />
-            </FullScreenContextProvider>
-          </FilePropertiesContextProvider>
-        </>
+          {openedEntry && (
+            <Box
+              sx={{
+                position: 'absolute',
+                inset: 0,
+                backgroundColor: 'background.default',
+              }}
+            >
+              {entryContainer}
+            </Box>
+          )}
+        </Box>
       );
     }
     return (
@@ -322,15 +345,7 @@ function MainPage() {
             toggleDrawer={toggleDrawer}
             drawerOpened={drawerOpened}
           />
-          <FilePropertiesContextProvider>
-            {openedEntry ? (
-              <FullScreenContextProvider>
-                <EntryContainer key="EntryContainerID" />
-              </FullScreenContextProvider>
-            ) : (
-              <div />
-            )}
-          </FilePropertiesContextProvider>
+          {entryContainer}
         </Splitter>
       </div>
     );
