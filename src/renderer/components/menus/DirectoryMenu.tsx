@@ -227,6 +227,18 @@ function DirectoryMenu(props: Props) {
     openDeleteMultipleEntriesDialog();
   }
 
+  function showAddRemoveTagsDialog() {
+    // Opened from the directory menu, so the action targets the current
+    // folder. Fall back to it when it isn't already part of the selection,
+    // otherwise the tagging dialog would open with nothing preselected.
+    const entries = selectedEntries.some(
+      (entry) => entry.path === directoryPath,
+    )
+      ? selectedEntries
+      : [currentLocation.toFsEntry(directoryPath, false)];
+    openAddRemoveTagsDialog(entries);
+  }
+
   function createNewFile(entryType?: TS.FileType) {
     openNewFileDialog(entryType);
   }
@@ -361,7 +373,7 @@ function DirectoryMenu(props: Props) {
         switchPerspectives ? perspectiveSwitch : undefined,
         showProperties,
         undefined, // cameraTakePicture removed — was using Cordova-only navigator.camera API
-        openAddRemoveTagsDialog,
+        showAddRemoveTagsDialog,
         openInNewWindow,
         changeFolderThumbnail,
         changeFolderBackground,
