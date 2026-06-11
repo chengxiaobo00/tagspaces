@@ -30,7 +30,7 @@ try {
   }
 }
 
-if (AppConfig.isCordovaAndroid) {
+if (AppConfig.isCapacitorAndroid) {
   tsPro = undefined;
 }
 
