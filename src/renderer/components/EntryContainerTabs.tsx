@@ -19,8 +19,8 @@
 import AppConfig from '-/AppConfig';
 import EntryContainerButtons from '-/components/EntryContainerButtons';
 import LoadingLazy from '-/components/LoadingLazy';
-import TsTooltip from '-/components/TsTooltip';
 import TsTabPanel from '-/components/TsTabPanel';
+import TsTooltip from '-/components/TsTooltip';
 import { TabItem, TabNames } from '-/hooks/EntryPropsTabsContextProvider';
 import { useChatContext } from '-/hooks/useChatContext';
 import { useEntryPropsTabsContext } from '-/hooks/useEntryPropsTabsContext';
@@ -200,7 +200,7 @@ function EntryContainerTabs(props: EntryContainerTabsProps) {
                   <Badge
                     color="primary"
                     variant="dot"
-                    invisible={!tab.showBadge || selectedTabIndex === index}
+                    invisible={!tab.showBadge}
                     anchorOrigin={{
                       vertical: 'top',
                       horizontal: 'right',
