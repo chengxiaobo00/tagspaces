@@ -271,7 +271,7 @@ test.describe('TST08 - File folder properties', () => {
   /**
    * Description is Pro feature (if no Pro editDescription button is disabled)
    */
-  test('TST3001 - Description for files [web,s3,electron,_pro]', async () => {
+  test('TST3001 - Description for files [web,s3,electron]', async () => {
     const desc = 'testDescription';
     // open fileProperties
     await openFile('sample.pdf');
@@ -283,11 +283,6 @@ test.describe('TST08 - File folder properties', () => {
       getGridFileSelector('sample.pdf'),
     );
   });
-
-  /**
-   * duplicate TST0213
-   */
-  test.skip('TST3005 - Description for folders [Pro]', async () => {});
 
   /**
    * reload file button failed on web windows only but the problem is in test only

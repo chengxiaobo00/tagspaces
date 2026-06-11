@@ -227,7 +227,7 @@ test.describe('TST02 - Folder properties', () => {
     await testDataRefresh(isS3, testDataDir);
   });
 
-  test('TST0213 - Add description to folder [web,s3,electron,_pro]', async () => {
+  test('TST0213 - Add description to folder [web,s3,electron]', async () => {
     await addDescription('testDescription');
     await expectElementExist(
       '[data-tid=gridCellDescription]',

@@ -986,6 +986,11 @@ export async function addDescription(desc) {
   } catch (e) {
     await editor.type(desc);
   }
+  // The editor pushes the typed markdown into React state via an async
+  // `markdownUpdated` listener. Saving before that state update propagates
+  // makes `saveDescription()` persist the stale (empty) description, so wait
+  // for the "changed" marker to appear before clicking save.
+  await expectElementExist('[data-tid=descriptionChangedTID]', true, 8000);
   await clickOn('[data-tid=saveDescriptionTID]');
 }
 
