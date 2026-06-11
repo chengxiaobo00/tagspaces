@@ -135,10 +135,11 @@ function normalizePath(path) {
 
 // --- Lifecycle ---
 
-async function onDeviceReady() {
-  console.log('Capacitor Device Ready: ' + Capacitor.getPlatform());
-
-  // Configure status bar — ensure WebView does not render behind it
+// Configure the status bar so the WebView does not render behind it. Re-asserting
+// setOverlaysWebView({overlay:false}) also forces the native side to re-inset and
+// resize the WebView to full height — used to recover from iOS leaving the
+// WebView ~status-bar-height short after exiting element fullscreen.
+async function setupStatusBar() {
   try {
     const { StatusBar, Style } = require('@capacitor/status-bar');
     await StatusBar.setOverlaysWebView({ overlay: false });
@@ -146,6 +147,13 @@ async function onDeviceReady() {
   } catch (e) {
     console.warn('StatusBar setup failed:', e);
   }
+}
+
+async function onDeviceReady() {
+  console.log('Capacitor Device Ready: ' + Capacitor.getPlatform());
+
+  // Configure status bar — ensure WebView does not render behind it
+  await setupStatusBar();
 
   // Enable background mode
   if (BackgroundMode) {
@@ -1190,6 +1198,7 @@ if (Capacitor.isNativePlatform()) {
 
 export {
   onDeviceReady,
+  setupStatusBar,
   onDeviceBackButton,
   handleOpenURL,
   normalizePath,

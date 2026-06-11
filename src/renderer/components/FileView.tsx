@@ -219,6 +219,60 @@ function FileView(props: Props) {
     isSearchMode,
   ]);
 
+  // iOS uses CSS fullscreen (the native Fullscreen API leaves WKWebView with a
+  // stale inset after exit). When fullscreen there, turn the container into a
+  // fixed, full-viewport overlay above the app chrome instead of relying on the
+  // :fullscreen pseudo-class. Other platforms use the real Fullscreen API.
+  const cssFullscreen =
+    isFullscreen && (AppConfig.isCapacitoriOS || AppConfig.isCordovaiOS);
+
+  // `position: fixed` is contained — not viewport-relative — by any ancestor
+  // with `contain`/`transform`/`filter`/`perspective`/`will-change` (the
+  // Splitter panes set `contain: layout paint`). That trapped the overlay
+  // inside the file-view pane. While CSS-fullscreen is active, neutralize those
+  // properties up the ancestor chain so the overlay fills the real viewport,
+  // and restore them on exit. (Portaling to <body> would escape it too, but
+  // moving the iframe in the DOM reloads it and loses editor state.)
+  useEffect(() => {
+    if (!cssFullscreen) return undefined;
+    const start = fileViewerContainer.current?.parentElement;
+    const saved: Array<{ node: HTMLElement; props: Record<string, string> }> =
+      [];
+    const RESET: Record<string, string> = {
+      contain: 'none',
+      transform: 'none',
+      filter: 'none',
+      perspective: 'none',
+      willChange: 'auto',
+    };
+    let node: HTMLElement | null = start || null;
+    while (node && node !== document.body) {
+      const cs = getComputedStyle(node);
+      const traps =
+        (cs.contain && cs.contain !== 'none') ||
+        (cs.transform && cs.transform !== 'none') ||
+        (cs.filter && cs.filter !== 'none') ||
+        (cs.perspective && cs.perspective !== 'none') ||
+        (cs.willChange && cs.willChange !== 'auto');
+      if (traps) {
+        const props: Record<string, string> = {};
+        Object.keys(RESET).forEach((k) => {
+          props[k] = node!.style[k as any];
+          node!.style[k as any] = RESET[k];
+        });
+        saved.push({ node, props });
+      }
+      node = node.parentElement;
+    }
+    return () => {
+      saved.forEach(({ node: n, props }) => {
+        Object.keys(props).forEach((k) => {
+          n.style[k as any] = props[k];
+        });
+      });
+    };
+  }, [cssFullscreen]);
+
   return (
     <Box
       ref={fileViewerContainer}
@@ -228,6 +282,16 @@ function FileView(props: Props) {
         display: 'flex',
         flex: '1 1 100%',
         backgroundColor: theme.palette.background.default,
+        ...(cssFullscreen && {
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: '100%',
+          height: '100%',
+          zIndex: 5000,
+        }),
       }}
     >
       {isFullscreen && (
