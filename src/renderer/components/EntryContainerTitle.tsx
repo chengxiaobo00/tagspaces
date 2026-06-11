@@ -26,8 +26,8 @@ import {
 import EntryContainerMenu from '-/components/EntryContainerMenu';
 import FileExtBadge from '-/components/FileExtBadge';
 import TagsPreview from '-/components/TagsPreview';
-import TsTooltip from '-/components/TsTooltip';
 import TsIconButton from '-/components/TsIconButton';
+import TsTooltip from '-/components/TsTooltip';
 import { useCurrentLocationContext } from '-/hooks/useCurrentLocationContext';
 import { useOpenedEntryContext } from '-/hooks/useOpenedEntryContext';
 import {
@@ -116,7 +116,7 @@ function EntryContainerTitle(props: Props) {
   const addMacMargin =
     AppConfig.isMacLike && desktopMode && (smallScreen || isEntryInFullWidth);
 
-  const rightMargin = smallScreen ? '60px' : '95px';
+  const rightMargin = smallScreen ? '50px' : '95px';
 
   return (
     <Box

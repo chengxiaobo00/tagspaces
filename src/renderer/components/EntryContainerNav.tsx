@@ -1,4 +1,6 @@
+import AppConfig from '-/AppConfig';
 import {
+  ArrowBackIcon,
   CloseIcon,
   EntryBookmarkAddIcon,
   EntryBookmarkIcon,
@@ -60,7 +62,7 @@ function EntryContainerNav(props: Props) {
       sx={{
         zIndex: 1,
         position: 'absolute',
-        top: 4,
+        top: 0,
         right: 5,
         display: 'flex',
         alignItems: 'center',
@@ -105,19 +107,34 @@ function EntryContainerNav(props: Props) {
               setActions(action);
             }}
           >
-            <PrevDocumentIcon />
+            {AppConfig.isNativeMobile ? (
+              // ArrowBackIos glyph is biased ~6px left of its box (built to sit
+              // next to text); recenter before rotating so up/down don't stagger.
+              <ArrowBackIcon
+                sx={{ transform: 'rotate(90deg) translateX(6px)' }}
+              />
+            ) : (
+              <PrevDocumentIcon />
+            )}
           </TsIconButton>
           <TsIconButton
             tooltip={t('core:openNextFileTooltip')}
             keyBinding={keyBindings['nextDocument']}
             aria-label={t('core:openNextFileTooltip')}
             data-tid="fileContainerNextFile"
+            sx={{ marginLeft: smallScreen ? '5px' : 0 }}
             onClick={() => {
               const action: TS.PerspectiveActions = { action: 'openNext' };
               setActions(action);
             }}
           >
-            <NextDocumentIcon />
+            {AppConfig.isNativeMobile ? (
+              <ArrowBackIcon
+                sx={{ transform: 'rotate(-90deg) translateX(6px)' }}
+              />
+            ) : (
+              <NextDocumentIcon />
+            )}
           </TsIconButton>
         </>
       )}
