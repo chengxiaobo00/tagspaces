@@ -196,12 +196,32 @@ export function getDirectoryMenuItems(
     );
   }
 
+  if (!isReadOnlyMode && showAddRemoveTagsDialog) {
+    menuItems.push(
+      <MenuItem
+        key="dirMenuAddRemoveTags"
+        data-tid="dirMenuAddRemoveTags"
+        onClick={() => {
+          onClose();
+          showAddRemoveTagsDialog(selectedEntries);
+        }}
+      >
+        <ListItemIcon>
+          <TagIcon />
+        </ListItemIcon>
+        <ListItemText primary={t('core:addRemoveTags')} />
+        <MenuKeyBinding keyBinding={keyBindings['addRemoveTags']} />
+      </MenuItem>,
+    );
+  }
+
   if (
     currentLocation &&
     selectedEntries.length < 2 &&
     !(
       currentLocation.haveObjectStoreSupport() ||
       currentLocation.haveWebDavSupport() ||
+      AppConfig.isNativeMobile ||
       AppConfig.isWeb
     ) &&
     showInFileManager
@@ -473,25 +493,6 @@ export function getDirectoryMenuItems(
           <LinkIcon />
         </ListItemIcon>
         <ListItemText primary={t('core:copySharingLink')} />
-      </MenuItem>,
-    );
-  }
-
-  if (!isReadOnlyMode && showAddRemoveTagsDialog) {
-    menuItems.push(
-      <MenuItem
-        key="dirMenuAddRemoveTags"
-        data-tid="dirMenuAddRemoveTags"
-        onClick={() => {
-          onClose();
-          showAddRemoveTagsDialog(selectedEntries);
-        }}
-      >
-        <ListItemIcon>
-          <TagIcon />
-        </ListItemIcon>
-        <ListItemText primary={t('core:addRemoveTags')} />
-        <MenuKeyBinding keyBinding={keyBindings['addRemoveTags']} />
       </MenuItem>,
     );
   }

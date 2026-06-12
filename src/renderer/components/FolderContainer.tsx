@@ -387,7 +387,7 @@ function FolderContainer({ toggleDrawer, drawerOpened, hidden }: Props) {
                 startIcon={<SearchIcon />}
                 sx={{
                   borderColor: theme.palette.divider,
-                  color: theme.palette.divider,
+                  color: theme.palette.text.primary,
                   marginTop: '-2px',
                   marginRight: 0,
                   marginLedt: 0,
