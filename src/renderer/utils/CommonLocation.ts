@@ -317,6 +317,19 @@ export class CommonLocation implements TS.Location {
       return this.getURLforPathInt(thumbPath, expirationInSeconds);
     }
 
+    // Capacitor: resolve the thumbnail's real native uri (Filesystem.getUri)
+    // rather than string-building a file:// URL. The iOS App Documents location
+    // stores path "/", so a naive file:///.ts/<name>.jpg points at the device
+    // root and the thumb never loads.
+    if (AppConfig.isCapacitor) {
+      const ioAPI = require('-/services/io-capacitor');
+      if (ioAPI.getNativeFileUrlAsync) {
+        return ioAPI
+          .getNativeFileUrlAsync(thumbPath)
+          .then((u: string) => (u ? u + (dt ? '?' + dt : '') : undefined));
+      }
+    }
+
     const normalizedUrl = this.normalizeUrl(thumbPath) + (dt ? '?' + dt : '');
     return Promise.resolve(normalizedUrl);
   };

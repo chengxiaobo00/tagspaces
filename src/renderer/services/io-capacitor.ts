@@ -65,6 +65,36 @@ let loadedSettingsTags;
 // --- Platform helpers ---
 
 /**
+ * Build a WebView-loadable URL (https://localhost/_capacitor_file_/… on Android,
+ * capacitor://… on iOS) for a location-relative path. Asks the Filesystem plugin
+ * for the exact native uri (so the iOS App Documents location, whose path is "/",
+ * resolves to the real Documents directory rather than the non-existent device
+ * root) and converts it for the WebView. Async because getUri is async; used by
+ * thumbnail URL resolution.
+ */
+function getNativeFileUrlAsync(path) {
+  if (!path) return Promise.resolve('');
+  if (!Capacitor || !Capacitor.convertFileSrc) return Promise.resolve(path);
+
+  const { path: rel, directory } = resolveCapacitorPath(path);
+
+  // iCloud / raw absolute paths already resolved to an encoded file:// path.
+  if (!directory) {
+    const abs = rel.startsWith('file://') ? rel.substring(7) : rel;
+    return Promise.resolve(Capacitor.convertFileSrc('file://' + abs));
+  }
+
+  return Filesystem.getUri({ directory, path: !rel || rel === '.' ? '' : rel })
+    .then(({ uri }) => Capacitor.convertFileSrc(uri))
+    .catch(() => {
+      // getUri failed — best-effort: treat the path as absolute (works on
+      // Android via the /sdcard symlink).
+      const filePath = path.startsWith('/') ? path : '/' + path;
+      return Capacitor.convertFileSrc('file://' + filePath);
+    });
+}
+
+/**
  * Determine the Capacitor Directory enum value and relative path from an absolute path.
  * On Android with MANAGE_EXTERNAL_STORAGE, we work with absolute paths via ExternalStorage.
  * On iOS, we work relative to the Documents directory.
@@ -412,10 +442,15 @@ function listMetaDirectoryPromise(path) {
     .then((result) => {
       if (result && result.files) {
         result.files.forEach((file) => {
-          const entryPath = metaDirPath + file.name;
           const ee = {};
           ee.name = file.name;
-          ee.path = entryPath;
+          // Return the bare filename in `path` to match the Electron/Node
+          // listMetaDirectoryPromise contract. Renderer consumers compare with
+          // `relativeThumb/MetaPath.endsWith(metaFile.path)` — a full path like
+          // "/.ts/<name>" is longer than the relative path and never matches,
+          // which silently broke file thumbnails (folder thumbs have separate
+          // logic). Callers that need to read the file rebuild the full path.
+          ee.path = file.name;
           ee.isFile = file.type === 'file';
           entries.push(ee);
         });
@@ -469,6 +504,15 @@ function listDirectoryPromise(param, mode = ['extractThumbPath']) {
             eentry.lmdt = file.mtime ? new Date(file.mtime).getTime() : 0;
           }
 
+          // Attach a WebView-loadable URL from the real native uri returned by
+          // readdir. Location-relative paths (e.g. the iOS App Documents
+          // location stores path "/") can't be turned into a file:// URL by
+          // string manipulation alone — the plugin already resolved the
+          // absolute sandbox path, so use it directly.
+          if (file.uri && Capacitor.convertFileSrc) {
+            eentry.url = Capacitor.convertFileSrc(file.uri);
+          }
+
           if (mode.includes('extractThumbPath')) {
             if (!eentry.isFile) {
               // Read tsm.json from subfolders
@@ -487,8 +531,17 @@ function listDirectoryPromise(param, mode = ['extractThumbPath']) {
               const metaFileAvailable = metaContent.find(
                 (obj) => obj.name === file.name + AppConfig.metaFileExt,
               );
-              if (metaFileAvailable && metaFileAvailable.path) {
-                metaPromises.push(getEntryMeta(eentry, metaFileAvailable.path));
+              if (metaFileAvailable) {
+                // metaContent carries bare filenames in `path`, so rebuild the
+                // full meta path (<dir>/.ts/<name>) for getEntryMeta to read.
+                const metaDir =
+                  cleanTrailingDirSeparator(path) +
+                  AppConfig.dirSeparator +
+                  AppConfig.metaFolder +
+                  AppConfig.dirSeparator;
+                metaPromises.push(
+                  getEntryMeta(eentry, metaDir + metaFileAvailable.name),
+                );
               }
             }
           }
@@ -556,6 +609,12 @@ function getPropertiesPromise(param) {
         lmdt: stat.mtime ? new Date(stat.mtime).getTime() : 0,
         isFile: stat.type === 'file',
         name: extractFileName(path, '/'),
+        // Real native uri (e.g. file:///var/mobile/.../Documents/IMG.jpeg) turned
+        // into a WebView-loadable URL — used by the viewer for opened files.
+        ...(stat.uri &&
+          Capacitor.convertFileSrc && {
+            url: Capacitor.convertFileSrc(stat.uri),
+          }),
       };
     })
     .catch((err) => {
@@ -1318,4 +1377,5 @@ export {
   focusWindow,
   shareFiles,
   downloadFile,
+  getNativeFileUrlAsync,
 };

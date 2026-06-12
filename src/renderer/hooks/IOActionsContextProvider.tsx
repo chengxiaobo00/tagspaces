@@ -1207,12 +1207,24 @@ export const IOActionsContextProvider = ({
                 };
               }
               fsEntries.push(fsEntry);
+              // Insert the imported file into the current directory listing.
+              // Unlike the Electron path (uploadFiles → setReflectActions),
+              // this Capacitor/web FileReader path previously only triggered
+              // thumbnail generation for *existing* entries, so freshly
+              // imported files were written to disk but never appeared until a
+              // manual reload — making import look broken (notably on the iOS
+              // App Documents location at "/").
+              setReflectActions({
+                action: 'add',
+                entry: fsEntry,
+                open: false,
+                source: 'upload',
+              });
               showNotification(
                 'File ' + fileTargetPath + ' successfully imported.',
                 'default',
                 true,
               );
-              // dispatch(AppActions.reflectCreateEntry(fileTargetPath, true));
             }
           } catch (error) {
             console.log(
