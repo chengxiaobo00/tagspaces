@@ -16,6 +16,8 @@ const {
   getMetaFileLocationForDir,
   getThumbFileLocationForDirectory,
 } = require('@tagspaces/tagspaces-common/paths');
+// Pure (native-free) helpers, separated so they can be unit-tested in Node.
+const U = require('./capacitor-io-utils');
 
 // Capacitor imports
 const { Capacitor } = require('@capacitor/core');
@@ -95,72 +97,23 @@ function getNativeFileUrlAsync(path) {
 }
 
 /**
- * Determine the Capacitor Directory enum value and relative path from an absolute path.
- * On Android with MANAGE_EXTERNAL_STORAGE, we work with absolute paths via ExternalStorage.
- * On iOS, we work relative to the Documents directory.
+ * Determine the Capacitor Directory enum value and relative path from an absolute
+ * path. Thin wrapper around the pure helper (unit-tested in capacitor-io-utils),
+ * injecting the runtime platform + Directory enum.
  */
 function resolveCapacitorPath(absolutePath) {
-  const platform = Capacitor.getPlatform();
-  let path = absolutePath;
-
-  if (platform === 'ios') {
-    // iCloud ubiquity-container paths live outside the app sandbox, so they
-    // can't be addressed relative to Directory.Documents. They are passed as
-    // raw absolute paths (containing "/Mobile Documents/"). @capacitor/filesystem
-    // addresses raw paths when no `directory` is given, but resolves them with
-    // URL(string:) — which returns nil for unencoded spaces. So build a
-    // percent-encoded file:// URL here (slashes preserved, spaces → %20).
-    if (path.startsWith('file://') || path.includes('/Mobile Documents/')) {
-      const abs = path.startsWith('file://') ? path.substring(7) : path;
-      const encoded = abs.split('/').map(encodeURIComponent).join('/');
-      return { path: 'file://' + encoded, directory: undefined };
-    }
-    // iOS: paths are relative to Documents directory
-    if (path.startsWith('/')) {
-      path = path.substring(1);
-    }
-    // Root of Documents = empty string or just "/" → use "." for Capacitor
-    if (!path || path === '') {
-      path = '.';
-    }
-    return { path, directory: Directory.Documents };
-  }
-
-  // Android: use ExternalStorage for sdcard paths
-  if (path.startsWith('sdcard/')) {
-    path = path.substring(7); // Remove 'sdcard/' prefix
-    if (!path || path === '') path = '.';
-    return { path, directory: Directory.ExternalStorage };
-  }
-  if (path.startsWith('/sdcard/')) {
-    path = path.substring(8);
-    if (!path || path === '') path = '.';
-    return { path, directory: Directory.ExternalStorage };
-  }
-  if (path.startsWith('/storage/emulated/0/')) {
-    path = path.substring(20);
-    if (!path || path === '') path = '.';
-    return { path, directory: Directory.ExternalStorage };
-  }
-  if (path.startsWith('/')) {
-    // Absolute path — use ExternalStorage with relative path
-    // For paths outside /storage/emulated/0, this may need MANAGE_EXTERNAL_STORAGE
-    path = path.substring(1);
-    if (!path || path === '') path = '.';
-    return { path, directory: Directory.ExternalStorage };
-  }
-
-  if (!path || path === '') path = '.';
-  return { path, directory: Directory.ExternalStorage };
+  return U.resolveCapacitorPath(
+    absolutePath,
+    Capacitor.getPlatform(),
+    Directory,
+  );
 }
 
 /**
  * Normalize a path for internal use (strip leading slash inconsistencies)
  */
 function normalizePath(path) {
-  if (!path) return path;
-  // Remove double slashes
-  return path.replace(/\/+/g, '/');
+  return U.normalizePath(path);
 }
 
 // --- Lifecycle ---
@@ -360,27 +313,7 @@ function loadSettingsTags() {
 // --- Platform API ---
 
 function getDevicePaths() {
-  let paths;
-  if (Capacitor.getPlatform() === 'ios') {
-    // The app's sandboxed Documents directory. iCloud Drive is resolved
-    // separately via getICloudContainer() — it is async and only available
-    // when the user is signed in to iCloud, so it can't be returned here.
-    paths = {
-      appDocumentsFolder: '/',
-    };
-  } else {
-    // Standard Android shared-storage folders. Keys deliberately match the
-    // core.json translation keys (*Folder) so auto-created locations and the
-    // onboarding slide get localized names instead of raw keys.
-    paths = {
-      dcimFolder: 'sdcard/DCIM/',
-      documentsFolder: 'sdcard/Documents/',
-      downloadsFolder: 'sdcard/Download/',
-      picturesFolder: 'sdcard/Pictures/',
-      moviesFolder: 'sdcard/Movies/',
-    };
-  }
-  return Promise.resolve(paths);
+  return Promise.resolve(U.getDevicePathsForPlatform(Capacitor.getPlatform()));
 }
 
 /**
@@ -708,34 +641,18 @@ function saveFilePromise(param, content, overWrite, isRaw) {
 
       const { path: capPath, directory } = resolveCapacitorPath(filePath);
 
+      // Decide how to write the content (text / extracted-base64 / binary). The
+      // routing is unit-tested in capacitor-io-utils.classifyWriteContent; the
+      // async base64 conversion stays here.
+      const plan = U.classifyWriteContent(content, isRaw, Encoding);
       let data;
       let encoding;
-
-      if (isRaw) {
-        // Raw text content
-        if (typeof content === 'string') {
-          data = content;
-          encoding = Encoding.UTF8;
-        } else {
-          // Blob or ArrayBuffer — convert to base64
-          data = await blobToBase64(content);
-          encoding = undefined;
-        }
-      } else if (
-        typeof content === 'string' &&
-        content.indexOf(';base64,') > 0
-      ) {
-        // Data URI with base64
-        const contentArray = content.split(';base64,');
-        data = contentArray.length > 1 ? contentArray[1] : contentArray[0];
-        encoding = undefined; // base64 mode
-      } else if (typeof content === 'string') {
-        data = content;
-        encoding = Encoding.UTF8;
-      } else {
-        // Blob or ArrayBuffer
+      if (plan.mode === 'binary') {
         data = await blobToBase64(content);
         encoding = undefined;
+      } else {
+        data = plan.data;
+        encoding = plan.encoding;
       }
 
       const writeOptions = {
@@ -767,28 +684,12 @@ function saveFilePromise(param, content, overWrite, isRaw) {
 
 function blobToBase64(blob) {
   return new Promise((resolve, reject) => {
-    // Handle ArrayBuffer and any TypedArray view (Uint8Array, etc.).
-    // Critical: base64ToUint8Array() returns a Uint8Array, which is a *view*
-    // — `instanceof ArrayBuffer` is false. Without this branch the thumbnail
-    // save path (saveThumbnailPromise → saveBinaryFilePromise) falls through
-    // to btoa(String(Uint8Array)) and writes "MCwxLDIs..." junk to disk,
-    // producing zero-thumbnails on iOS/Android Capacitor.
+    // Handle ArrayBuffer and any TypedArray view (Uint8Array, etc.). The view
+    // case is critical: base64ToUint8Array() returns a Uint8Array view, and
+    // mishandling it writes "MCwxLDIs..." junk → zero-thumbnails. The encoding
+    // logic lives in capacitor-io-utils.binaryToBase64 (unit-tested).
     if (blob instanceof ArrayBuffer || ArrayBuffer.isView(blob)) {
-      const bytes =
-        blob instanceof ArrayBuffer
-          ? new Uint8Array(blob)
-          : new Uint8Array(blob.buffer, blob.byteOffset, blob.byteLength);
-      // Chunked to avoid blowing the JS engine's argument limit on large
-      // payloads (apply spreads each byte as a separate argument).
-      let binary = '';
-      const CHUNK = 0x8000;
-      for (let i = 0; i < bytes.length; i += CHUNK) {
-        binary += String.fromCharCode.apply(
-          null,
-          bytes.subarray(i, i + CHUNK) as any,
-        );
-      }
-      resolve(btoa(binary));
+      resolve(U.binaryToBase64(blob));
       return;
     }
     if (blob instanceof Blob) {
