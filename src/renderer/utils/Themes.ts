@@ -48,9 +48,11 @@ export const createTSTheme = (themeName: string, isDark: boolean = false) => {
       MuiDialog: {
         styleOverrides: {
           paper: ({ theme }) => ({
-            borderRadius: '15px',
+            borderRadius: AppConfig.defaultCSSRadius,
+            // On small screens dialogs render fullScreen (edge-to-edge); keep
+            // the corners rounded against the backdrop instead of squaring them.
             [theme.breakpoints.down('md')]: {
-              borderRadius: '0px',
+              borderRadius: AppConfig.defaultCSSRadius,
             },
           }),
         },
