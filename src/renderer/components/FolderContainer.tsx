@@ -191,6 +191,12 @@ function FolderContainer({ toggleDrawer, drawerOpened, hidden }: Props) {
             opacity: 0.9,
             backgroundColor: theme.palette.background.default,
             border: `1px solid ${theme.palette.divider}`,
+            '&:hover, &.Mui-selected, &.Mui-selected:hover': {
+              backgroundColor:
+                theme.palette.mode === 'dark'
+                  ? theme.palette.grey[800]
+                  : theme.palette.grey[200],
+            },
           }}
         >
           <TsTooltip
@@ -476,6 +482,13 @@ function FolderContainer({ toggleDrawer, drawerOpened, hidden }: Props) {
                   marginLeft: '5px',
                   backgroundColor: theme.palette.background.default,
                   border: `1px solid ${theme.palette.divider}`,
+                  '&:hover': {
+                    backgroundColor:
+                      theme.palette.mode === 'dark'
+                        ? theme.palette.grey[800]
+                        : theme.palette.grey[200],
+                    borderColor: theme.palette.text.secondary,
+                  },
                 }}
                 onClick={() => {
                   if (readOnlyLocation) return;
