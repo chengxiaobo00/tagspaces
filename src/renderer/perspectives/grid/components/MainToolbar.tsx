@@ -42,6 +42,7 @@ import { useMenuContext } from '-/components/dialogs/hooks/useMenuContext';
 import { TabNames } from '-/hooks/EntryPropsTabsContextProvider';
 import { useCurrentLocationContext } from '-/hooks/useCurrentLocationContext';
 import { useDirectoryContentContext } from '-/hooks/useDirectoryContentContext';
+import { useIOActionsContext } from '-/hooks/useIOActionsContext';
 import { useNotificationContext } from '-/hooks/useNotificationContext';
 import { useOpenedEntryContext } from '-/hooks/useOpenedEntryContext';
 import { usePerspectiveSettingsContext } from '-/hooks/usePerspectiveSettingsContext';
@@ -51,7 +52,6 @@ import { Pro } from '-/pro';
 import { getKeyBindingObject, isHideProFeatures } from '-/reducers/settings';
 import { Box, Divider, Toolbar } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
-import { saveAs } from 'file-saver';
 import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
 
@@ -90,6 +90,7 @@ function MainToolbar(props: Props) {
   const { loadParentDirectoryContent, currentDirectoryPath } =
     useDirectoryContentContext();
   const { selectedEntries } = useSelectedEntriesContext();
+  const { downloadFsEntry } = useIOActionsContext();
   const keyBindings = useSelector(getKeyBindingObject);
   const hideProFeatures: boolean = useSelector(isHideProFeatures);
   const { currentLocation } = useCurrentLocationContext();
@@ -105,28 +106,21 @@ function MainToolbar(props: Props) {
   }
 
   function multipleDownload() {
+    // downloadFsEntry handles every backend (object-store signed URLs,
+    // encrypted blobs, plain URLs) and every platform: web/electron via an
+    // <a download> anchor, native mobile via @capacitor/filesystem (Android →
+    // public Download/ folder, iOS → Cache + share sheet). It also surfaces
+    // start/completion notifications on mobile.
     selectedEntries?.forEach((entry) => {
       if (entry.isFile) {
-        const cleanedPath = entry.path.startsWith('/')
-          ? entry.path.substr(1)
-          : entry.path;
-        currentLocation
-          ?.generateURLforPath(cleanedPath, 900)
-          .then((url) => fetch(url))
-          .then((res) => res.blob()) // Gets the response and returns it as a blob
-          .then((blob) => {
-            saveAs(blob, entry.name);
-          });
+        downloadFsEntry(entry);
       }
     });
   }
 
   const showDownloadButton =
-    AppConfig.isWeb &&
     selectedEntries?.length > 0 &&
-    // (PlatformIO.haveObjectStoreSupport() || PlatformIO.haveWebDavSupport()) &&
-    !AppConfig.isCordovaAndroid &&
-    !AppConfig.isCapacitorAndroid; // saveAs do not work on Android
+    (AppConfig.isWeb || AppConfig.isNativeMobile);
 
   const folderSettingsAvailable = haveLocalSetting();
 
@@ -290,9 +284,7 @@ function MainToolbar(props: Props) {
         </TsToolbarButton>
       )}
       {!hideProFeatures &&
-        Pro &&
-        !AppConfig.isCordovaAndroid &&
-        !AppConfig.isCapacitorAndroid && ( // SaveAs do not work on Android
+        Pro && ( // SaveAs do not work on Android
           <TsToolbarButton
             tooltip={t('core:exportCsv')}
             title={t('core:startExportButton')}

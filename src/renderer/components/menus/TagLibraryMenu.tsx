@@ -16,7 +16,6 @@
  *
  */
 
-import AppConfig from '-/AppConfig';
 import {
   CreateFileIcon,
   ExportIcon,
@@ -131,14 +130,12 @@ function TagLibraryMenu(props: Props) {
             </ListItemIcon>
             <ListItemText primary={t('core:importTags')} />
           </MenuItem>
-          {!AppConfig.isCordovaAndroid && !AppConfig.isCapacitorAndroid && (
-            <MenuItem data-tid="exportTagGroup" onClick={handleExportTagGroup}>
-              <ListItemIcon>
-                <ExportIcon />
-              </ListItemIcon>
-              <ListItemText primary={t('core:exportTagGroupsButton')} />
-            </MenuItem>
-          )}
+          <MenuItem data-tid="exportTagGroup" onClick={handleExportTagGroup}>
+            <ListItemIcon>
+              <ExportIcon />
+            </ListItemIcon>
+            <ListItemText primary={t('core:exportTagGroupsButton')} />
+          </MenuItem>
           <MenuItem
             data-tid="taglibraryHelp"
             onClick={() => {

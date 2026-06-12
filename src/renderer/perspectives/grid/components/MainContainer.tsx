@@ -44,10 +44,12 @@ import { getDesktopMode, getKeyBindingObject } from '-/reducers/settings';
 import { openURLExternally } from '-/services/utils-io';
 import { TS } from '-/tagspaces.namespace';
 import useFirstRender from '-/utils/useFirstRender';
+import AppConfig from '-/AppConfig';
 import { Box } from '@mui/material';
 import Links from 'assets/links';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { GlobalHotKeys } from 'react-hotkeys';
+import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
 import GridCell from './GridCell';
 
@@ -62,6 +64,7 @@ function GridPerspective(props: Props) {
   const { openEntry, openPrevFile, openNextFile, openedEntry, fileChanged } =
     useOpenedEntryContext();
   const { showNotification } = useNotificationContext();
+  const { t } = useTranslation();
   const { actions } = usePerspectiveActionsContext();
   const { showDirectories } = usePerspectiveSettingsContext();
   const { currentLocation } = useCurrentLocationContext();
@@ -137,10 +140,36 @@ function GridPerspective(props: Props) {
 
   const handleExportCsvMenu = () => {
     if (Pro) {
-      if (selectedEntries && selectedEntries.length > 0) {
-        Pro.exportAsCsv.ExportAsCsv(selectedEntries);
-      } else {
-        Pro.exportAsCsv.ExportAsCsv(sortedDirContent);
+      const entries =
+        selectedEntries && selectedEntries.length > 0
+          ? selectedEntries
+          : sortedDirContent;
+      const result = Pro.exportAsCsv.ExportAsCsv(entries);
+      // On native mobile the export is written via the filesystem (no browser
+      // download), so confirm start/completion explicitly — otherwise the tap
+      // looks like a no-op. On web/electron the browser download is feedback.
+      if (
+        AppConfig.isNativeMobile &&
+        result &&
+        typeof result.then === 'function'
+      ) {
+        showNotification(t('core:exportInProgress'));
+        result
+          .then((res: { path?: string; shared?: boolean }) => {
+            // iOS routes through the share sheet (res.shared) — the share UI is
+            // the confirmation, so only toast on the Android Download-folder save.
+            if (!res?.shared) {
+              showNotification(t('core:exportSuccessful'));
+            }
+            return true;
+          })
+          .catch((e: any) => {
+            showNotification(
+              t('core:exportError', { message: e?.message || e }),
+              'error',
+              true,
+            );
+          });
       }
     }
   };

@@ -291,7 +291,22 @@ export function getPrevFile(
 }
 
 export function saveAsTextFile(blob: any, filename: string) {
+  if (AppConfig.isCapacitor) {
+    // file-saver triggers a download via an <a download> + blob: URL click.
+    // That does nothing inside the Capacitor WebView (there is no Downloads
+    // mechanism, and iOS WKWebView blocks blob downloads), so exports silently
+    // failed on Android/iOS. Route through the native filesystem instead:
+    // downloadFile() fetches the blob: URL and writes the bytes via
+    // @capacitor/filesystem — Android into the public Download/ folder, iOS
+    // into Cache followed by the share sheet ("Save to Files", AirDrop, …).
+    const ioAPI = require('-/services/io-capacitor');
+    const url = URL.createObjectURL(blob);
+    return ioAPI
+      .downloadFile(filename, url)
+      .finally(() => URL.revokeObjectURL(url));
+  }
   saveAs(blob, filename);
+  return Promise.resolve({ path: filename, shared: false });
 }
 
 export function isFulfilled<T>(

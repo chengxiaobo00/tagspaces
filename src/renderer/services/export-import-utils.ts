@@ -109,7 +109,10 @@ export async function downloadEnvelope(
 ): Promise<void> {
   const { blob, ext } = await serializeEnvelope(env, aesPassword);
   const dateTimeTag = formatDateTime4Tag(new Date(), true);
-  saveAsTextFile(blob, `tagspaces-export [${dateTimeTag}]${ext}`);
+  // On native mobile saveAsTextFile returns a promise (native write + share);
+  // await it so the caller's "successfully exported" notification only fires
+  // once the file is actually persisted. On desktop/web it resolves to void.
+  await saveAsTextFile(blob, `tagspaces-export [${dateTimeTag}]${ext}`);
 }
 
 export function readImportFile(

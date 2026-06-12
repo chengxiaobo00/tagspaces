@@ -68,41 +68,9 @@ const FileUploadContainer = forwardRef(
       },
       onFileUpload(dirPath: string) {
         directoryPath.current = dirPath;
-        /* if (AppConfig.isCordovaAndroid) {
-          PlatformIO.selectFileDialog()
-            .then(file => {
-              console.log('file', file.uri);
-              return [file.uri];
-            })
-            .then(arrFiles => {
-              props
-                .uploadFiles(
-                  arrFiles,
-                  props.directoryPath,
-                  props.onUploadProgress
-                )
-                .then(fsEntries => {
-                  props.reflectCreateEntries(fsEntries);
-                  return true;
-                })
-                .catch(error => {
-                  console.log('uploadFiles', error);
-                });
-              props.toggleUploadDialog();
-              return true;
-            })
-            .catch(error => {
-              console.log('uploadFiles', error);
-            });
-        } else { */
         fileInput.current.click();
-        // }
       },
     }));
-
-    /* if (AppConfig.isCordovaAndroid) {
-      return null;
-    } */
 
     const fileInput = useRef<HTMLInputElement>(null);
 
