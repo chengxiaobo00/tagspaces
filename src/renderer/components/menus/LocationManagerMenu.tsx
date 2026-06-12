@@ -32,6 +32,7 @@ import TsMenuList from '-/components/TsMenuList';
 import { useCurrentLocationContext } from '-/hooks/useCurrentLocationContext';
 import { useLocationIndexContext } from '-/hooks/useLocationIndexContext';
 import { Pro } from '-/pro';
+import { isHideProFeatures } from '-/reducers/settings';
 import { openURLExternally } from '-/services/utils-io';
 import { TS } from '-/tagspaces.namespace';
 import { Divider } from '@mui/material';
@@ -42,6 +43,7 @@ import MenuItem from '@mui/material/MenuItem';
 import Links from 'assets/links';
 import { useContext, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSelector } from 'react-redux';
 import SidePanelTitle from '../SidePanelTitle';
 
 interface Props {
@@ -56,6 +58,7 @@ function LocationManagerMenu(props: Props) {
 
   const { createLocationsIndexes } = useLocationIndexContext();
   const { closeAllLocations } = useCurrentLocationContext();
+  const hideProFeatures: boolean = useSelector(isHideProFeatures);
   //const { openLinkDialog } = useLinkDialogContext();
   const [locationManagerMenuAnchorEl, setLocationManagerMenuAnchorEl] =
     useState<null | HTMLElement>(null);
@@ -90,55 +93,59 @@ function LocationManagerMenu(props: Props) {
     menuItems.push(<Divider key={`divider-${menuItems.length}`} />);
   }
 
-  // https://trello.com/c/z6ESlqxz/697-exports-to-json-or-csv-do-not-work-on-android
-  menuItems.push(
-    <MenuItem
-      disabled={!Pro}
-      key="locationManagerMenuExportLocationsTID"
-      data-tid="locationManagerMenuExportLocationsTID"
-      onClick={() => {
-        setLocationManagerMenuAnchorEl(null);
-        exportLocations();
-      }}
-    >
-      <ListItemIcon>
-        <ExportIcon />
-      </ListItemIcon>
-      <ListItemText
-        primary={
-          <>
-            {t('core:exportLocationTitle')}
-            <ProLabel />
-          </>
-        }
-      />
-    </MenuItem>,
-  );
-  if (!AppConfig.ExtLocationsReadOnly) {
+  // Export/Import locations are Pro features. In the Lite build, hide them
+  // entirely when the user opted out of Pro teasers (isHideProFeatures);
+  // otherwise show them (functional on Pro, disabled with a PRO badge on Lite).
+  if (!hideProFeatures || Pro) {
     menuItems.push(
       <MenuItem
         disabled={!Pro}
-        key="locationManagerMenuImportLocations"
-        data-tid="locationManagerMenuImportLocationsTID"
+        key="locationManagerMenuExportLocationsTID"
+        data-tid="locationManagerMenuExportLocationsTID"
         onClick={() => {
           setLocationManagerMenuAnchorEl(null);
-          importLocations();
+          exportLocations();
         }}
       >
         <ListItemIcon>
-          <ImportIcon />
+          <ExportIcon />
         </ListItemIcon>
         <ListItemText
           primary={
             <>
-              {t('core:importLocationTitle')}
+              {t('core:exportLocationTitle')}
               <ProLabel />
             </>
           }
         />
       </MenuItem>,
     );
-    menuItems.push(<Divider key={`divider-${menuItems.length}`} />);
+    if (!AppConfig.ExtLocationsReadOnly) {
+      menuItems.push(
+        <MenuItem
+          disabled={!Pro}
+          key="locationManagerMenuImportLocations"
+          data-tid="locationManagerMenuImportLocationsTID"
+          onClick={() => {
+            setLocationManagerMenuAnchorEl(null);
+            importLocations();
+          }}
+        >
+          <ListItemIcon>
+            <ImportIcon />
+          </ListItemIcon>
+          <ListItemText
+            primary={
+              <>
+                {t('core:importLocationTitle')}
+                <ProLabel />
+              </>
+            }
+          />
+        </MenuItem>,
+      );
+      menuItems.push(<Divider key={`divider-${menuItems.length}`} />);
+    }
   }
 
   menuItems.push(
