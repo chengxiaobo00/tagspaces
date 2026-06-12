@@ -16,18 +16,22 @@
  *
  */
 
+import AppConfig from '-/AppConfig';
 import DraggablePaper from '-/components/DraggablePaper';
+import TagContainer from '-/components/TagContainer';
 import TsButton from '-/components/TsButton';
 import SelectedItemsSummary from '-/components/dialogs/components/SelectedItemsSummary';
 import TsDialogActions from '-/components/dialogs/components/TsDialogActions';
 import TsDialogTitle from '-/components/dialogs/components/TsDialogTitle';
 import { useSelectedEntriesContext } from '-/hooks/useSelectedEntriesContext';
 import { useTaggingActionsContext } from '-/hooks/useTaggingActionsContext';
+import SmartTags from '-/reducers/smart-tags';
 import { TS } from '-/tagspaces.namespace';
 import Box from '@mui/material/Box';
 import Dialog from '@mui/material/Dialog';
 import DialogContent from '@mui/material/DialogContent';
 import Paper from '@mui/material/Paper';
+import Typography from '@mui/material/Typography';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useReducer, useRef, useState } from 'react';
@@ -44,7 +48,8 @@ function AddRemoveTagsDialog(props: Props) {
   const { t } = useTranslation();
   const { open, selected } = props;
 
-  const { addTagsToFsEntries, removeTags } = useTaggingActionsContext();
+  const { addTagsToFsEntries, removeTags, addTags } =
+    useTaggingActionsContext();
   const { selectedEntries } = useSelectedEntriesContext();
   const [newlyAddedTags, setNewlyAddedTags] = useState<TS.Tag[]>([]);
   const inputTags = useRef<TS.Tag[]>([]);
@@ -159,6 +164,48 @@ function AddRemoveTagsDialog(props: Props) {
           tagMode="remove"
           autoFocus={true}
         />
+        {smallScreen && AppConfig.ExtShowSmartTags && (
+          <Box sx={{ marginTop: 1.5 }}>
+            <Typography variant="caption" color="textSecondary">
+              {t('core:smartTags')}
+            </Typography>
+            <Box
+              sx={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '2px',
+                marginTop: '4px',
+              }}
+            >
+              {/* Render exactly like the tag library (TagContainer in display
+                  mode → date/place icons + library colors). In display mode the
+                  menu slot is just a spacer, so a tap fires handleTagMenu, which
+                  we repurpose to apply the tag. Date-based tags apply
+                  immediately; the geo/date tags open their own picker (via
+                  addTags → openEditEntryTagDialog). Either way close this
+                  dialog: it confirms the action and keeps the picker from
+                  stacking. */}
+              {SmartTags(t)[0].children.map((tag) => (
+                <TagContainer
+                  key={tag.id}
+                  tag={tag as TS.Tag}
+                  tagMode="display"
+                  handleTagMenu={(event, clickedTag) => {
+                    const needsPicker =
+                      clickedTag.functionality === 'geoTagging' ||
+                      clickedTag.functionality === 'dateTagging';
+                    if (currentEntries && currentEntries.length > 0) {
+                      addTags(currentEntries, [clickedTag]);
+                    }
+                    // Clear selection only for the immediate-apply tags; the
+                    // picker flow keeps the entries it was opened with.
+                    onCloseDialog(!needsPicker);
+                  }}
+                />
+              ))}
+            </Box>
+          </Box>
+        )}
         <Box sx={{ marginTop: 1.5 }}>
           <SelectedItemsSummary
             entries={currentEntries}
