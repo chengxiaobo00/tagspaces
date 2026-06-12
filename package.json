@@ -104,7 +104,7 @@
     "prebuild": "rimraf release/app/dist && npm run prepare-node && npm run generate-extensions && npm run gen-licenses",
     "prestart": "cross-env NODE_ENV=development TS_NODE_TRANSPILE_ONLY=true webpack --config ./.erb/configs/webpack.config.main.dev.ts",
     "prepare": "husky install",
-    "prepare-capacitor": "npm run install-ext-web-check && rimraf capacitor/www/dist && rimraf capacitor/www/node_modules && shx cp -rL release/app/node_modules capacitor/www && shx cp LICENSE.txt capacitor/www",
+    "prepare-capacitor": "npm run install-ext-web-check && rimraf capacitor/www/dist && rimraf capacitor/www/node_modules && shx cp -rL release/app/node_modules capacitor/www && node scripts/strip-capacitor-natives.js && shx cp LICENSE.txt capacitor/www",
     "prepare-cordova": "npm run install-ext-web-check && rimraf cordova/www/dist && rimraf cordova/www/node_modules && shx cp -rL release/app/node_modules cordova/www && shx cp LICENSE.txt cordova/www",
     "prepare-cordova-pro": "npm run install-ext-web-check && rimraf cordova/www/dist && rimraf cordova/www/node_modules && shx cp -rL release/app/node_modules cordova/www && shx cp node_modules/@tagspacespro/tagspacespro/EULA.txt cordova/www",
     "prepare-node": "npm run install-ext-node-check",
