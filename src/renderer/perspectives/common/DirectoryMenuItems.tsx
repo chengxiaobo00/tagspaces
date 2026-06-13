@@ -90,7 +90,7 @@ export function getDirectoryMenuItems(
           </MenuItem>,
         );
       }
-      if (openInNewWindow) {
+      if (openInNewWindow && !AppConfig.isNativeMobile) {
         menuItems.push(
           <MenuItem
             key="openInNewWindow"

@@ -385,7 +385,8 @@ function FileMenu(props: Props) {
       (currentLocation &&
         (currentLocation.haveObjectStoreSupport() ||
           currentLocation.haveWebDavSupport())) ||
-      AppConfig.isWeb
+      AppConfig.isWeb ||
+      AppConfig.isNativeMobile
     );
     // "Open ▸" groups every way to open the entry — in TagSpaces, its parent
     // folder, natively, and with a specific extension — into one submenu.
@@ -484,18 +485,20 @@ function FileMenu(props: Props) {
         </TsMenuList>
       </Menu>,
     );
-    menuItems.push(
-      <MenuItem
-        key="fileMenuOpenFileNewWindow"
-        data-tid="fileMenuOpenFileNewWindow"
-        onClick={openInNewWindow}
-      >
-        <ListItemIcon>
-          <OpenNewWindowIcon />
-        </ListItemIcon>
-        <ListItemText primary={t('core:openInWindow')} />
-      </MenuItem>,
-    );
+    if (!AppConfig.isNativeMobile) {
+      menuItems.push(
+        <MenuItem
+          key="fileMenuOpenFileNewWindow"
+          data-tid="fileMenuOpenFileNewWindow"
+          onClick={openInNewWindow}
+        >
+          <ListItemIcon>
+            <OpenNewWindowIcon />
+          </ListItemIcon>
+          <ListItemText primary={t('core:openInWindow')} />
+        </MenuItem>,
+      );
+    }
   }
   if (
     !(

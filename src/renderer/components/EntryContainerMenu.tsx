@@ -376,7 +376,8 @@ function EntryContainerMenu(props: Props) {
       !(
         currentLocation?.haveObjectStoreSupport() ||
         currentLocation?.haveWebDavSupport() ||
-        AppConfig.isWeb
+        AppConfig.isWeb ||
+        AppConfig.isNativeMobile
       ) &&
       !(AppConfig.isAndroid && !openedEntry.isFile)
     ) {
@@ -484,7 +485,8 @@ function EntryContainerMenu(props: Props) {
       !(
         currentLocation?.haveObjectStoreSupport() ||
         currentLocation?.haveWebDavSupport() ||
-        AppConfig.isWeb
+        AppConfig.isWeb ||
+        AppConfig.isNativeMobile
       )
     ) {
       menuItems.push(
