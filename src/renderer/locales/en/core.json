@@ -204,6 +204,7 @@
   "enableGlobalKeyboardShortcuts": "Enable global keyboard shortcuts",
   "appName": "TagSpaces",
   "addRemoveTags": "Add / Remove Tags",
+  "open": "Open",
   "openFile": "Open File",
   "openFileWith": "Open with…",
   "downloadFile": "Download File",

@@ -381,82 +381,109 @@ function FileMenu(props: Props) {
       : [];
 
   if (selectedEntries.length < 2) {
+    const nativeOpenAllowed = !(
+      (currentLocation &&
+        (currentLocation.haveObjectStoreSupport() ||
+          currentLocation.haveWebDavSupport())) ||
+      AppConfig.isWeb
+    );
+    // "Open ▸" groups every way to open the entry — in TagSpaces, its parent
+    // folder, natively, and with a specific extension — into one submenu.
     menuItems.push(
       <MenuItem
-        key="fileMenuOpenFile"
-        data-tid="fileMenuOpenFile"
-        onClick={openFile}
+        key="fileMenuOpen"
+        data-tid="fileMenuOpen"
+        onClick={(e) => setOpenWithAnchor(e.currentTarget)}
+        onMouseEnter={(e) => setOpenWithAnchor(e.currentTarget)}
       >
         <ListItemIcon>
           <OpenFileIcon />
         </ListItemIcon>
-        <ListItemText primary={t('core:openFile')} />
-        <MenuKeyBinding keyBinding={keyBindings['openEntry']} />
+        <ListItemText primary={t('core:open')} />
+        <SmallArrowRightIcon fontSize="small" />
       </MenuItem>,
     );
-    if (openWithCandidates.length > 0) {
-      menuItems.push(
-        <MenuItem
-          key="fileMenuOpenWith"
-          data-tid="fileMenuOpenWith"
-          onClick={(e) => setOpenWithAnchor(e.currentTarget)}
-          onMouseEnter={(e) => setOpenWithAnchor(e.currentTarget)}
-        >
-          <ListItemIcon>
-            <OpenFileIcon />
-          </ListItemIcon>
-          <ListItemText primary={t('core:openFileWith')} />
-          <SmallArrowRightIcon fontSize="small" />
-        </MenuItem>,
-      );
-      menuItems.push(
-        <Menu
-          key="fileMenuOpenWithSubmenu"
-          anchorEl={openWithAnchor}
-          open={Boolean(openWithAnchor)}
-          onClose={() => setOpenWithAnchor(null)}
-          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-          transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-          // Desktop: let the submenu's modal backdrop pass pointer events through
-          // to the parent menu, so its other items (e.g. reorder) stay clickable
-          // while this hover-opened submenu is shown (the paper re-enables
-          // clicks). Since it opens on hover, close it on hover-out. On touch
-          // there is no hover, so keep a normal modal backdrop — tapping outside
-          // dismisses it.
-          slotProps={
-            AppConfig.isNativeMobile
-              ? undefined
-              : {
-                  root: { sx: { pointerEvents: 'none' } },
-                  paper: {
-                    sx: { pointerEvents: 'auto' },
-                    onMouseLeave: () => setOpenWithAnchor(null),
-                  },
+    menuItems.push(
+      <Menu
+        key="fileMenuOpenSubmenu"
+        anchorEl={openWithAnchor}
+        open={Boolean(openWithAnchor)}
+        onClose={() => setOpenWithAnchor(null)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+        // Desktop: let the submenu's modal backdrop pass pointer events through
+        // to the parent menu so its other items stay clickable while this
+        // hover-opened submenu is shown (the paper re-enables clicks). Since it
+        // opens on hover, close it on hover-out. On touch there is no hover, so
+        // keep a normal modal backdrop — tapping outside dismisses it.
+        slotProps={
+          AppConfig.isNativeMobile
+            ? undefined
+            : {
+                root: { sx: { pointerEvents: 'none' } },
+                paper: {
+                  sx: { pointerEvents: 'auto' },
+                  onMouseLeave: () => setOpenWithAnchor(null),
+                },
+              }
+        }
+      >
+        <TsMenuList>
+          <MenuItem
+            key="fileMenuOpenFile"
+            data-tid="fileMenuOpenFile"
+            onClick={openFile}
+          >
+            <ListItemIcon>
+              <OpenFileIcon />
+            </ListItemIcon>
+            <ListItemText primary={t('core:openFile')} />
+            <MenuKeyBinding keyBinding={keyBindings['openEntry']} />
+          </MenuItem>
+          <MenuItem
+            key="fileMenuOpenParentFolderInternally"
+            data-tid="fileMenuOpenParentFolderInternally"
+            onClick={openParentFolderInternally}
+          >
+            <ListItemIcon>
+              <ParentFolderIcon />
+            </ListItemIcon>
+            <ListItemText primary={t('core:openParentFolder')} />
+          </MenuItem>
+          {nativeOpenAllowed && (
+            <MenuItem
+              key="fileMenuOpenFileNatively"
+              data-tid="fileMenuOpenFileNatively"
+              onClick={openFileNativelyHandler}
+            >
+              <ListItemIcon>
+                <OpenEntryNativelyIcon />
+              </ListItemIcon>
+              <ListItemText primary={t('core:openFileNatively')} />
+              <MenuKeyBinding keyBinding={keyBindings['openFileExternally']} />
+            </MenuItem>
+          )}
+          {openWithCandidates.length > 0 && <Divider key="openWithDivider" />}
+          {openWithCandidates.map((c) => (
+            <MenuItem
+              key={`openWith-${c.extensionId}-${c.role}`}
+              data-tid={`openWith-${c.extensionId}-${c.role}`}
+              onClick={() => openFileWithExtension(c.extensionId, c.role)}
+            >
+              <ListItemText
+                primary={
+                  c.extensionName +
+                  ' (' +
+                  c.role +
+                  (c.isDefault ? ', default' : '') +
+                  ')'
                 }
-          }
-        >
-          <TsMenuList>
-            {openWithCandidates.map((c) => (
-              <MenuItem
-                key={`openWith-${c.extensionId}-${c.role}`}
-                data-tid={`openWith-${c.extensionId}-${c.role}`}
-                onClick={() => openFileWithExtension(c.extensionId, c.role)}
-              >
-                <ListItemText
-                  primary={
-                    c.extensionName +
-                    ' (' +
-                    c.role +
-                    (c.isDefault ? ', default' : '') +
-                    ')'
-                  }
-                />
-              </MenuItem>
-            ))}
-          </TsMenuList>
-        </Menu>,
-      );
-    }
+              />
+            </MenuItem>
+          ))}
+        </TsMenuList>
+      </Menu>,
+    );
     menuItems.push(
       <MenuItem
         key="fileMenuOpenFileNewWindow"
@@ -469,18 +496,6 @@ function FileMenu(props: Props) {
         <ListItemText primary={t('core:openInWindow')} />
       </MenuItem>,
     );
-    menuItems.push(
-      <MenuItem
-        key="fileMenuOpenParentFolderInternally"
-        data-tid="fileMenuOpenParentFolderInternally"
-        onClick={openParentFolderInternally}
-      >
-        <ListItemIcon>
-          <ParentFolderIcon />
-        </ListItemIcon>
-        <ListItemText primary={t('core:openParentFolder')} />
-      </MenuItem>,
-    );
   }
   if (
     !(
@@ -491,19 +506,7 @@ function FileMenu(props: Props) {
     ) &&
     selectedEntries.length < 2
   ) {
-    menuItems.push(
-      <MenuItem
-        key="fileMenuOpenFileNatively"
-        data-tid="fileMenuOpenFileNatively"
-        onClick={openFileNativelyHandler}
-      >
-        <ListItemIcon>
-          <OpenEntryNativelyIcon />
-        </ListItemIcon>
-        <ListItemText primary={t('core:openFileNatively')} />
-        <MenuKeyBinding keyBinding={keyBindings['openFileExternally']} />
-      </MenuItem>,
-    );
+    // "Open file natively" moved into the "Open ▸" submenu above.
     if (AppConfig.isElectron) {
       menuItems.push(
         <MenuItem
