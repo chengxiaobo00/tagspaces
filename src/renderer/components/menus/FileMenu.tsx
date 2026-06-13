@@ -417,13 +417,23 @@ function FileMenu(props: Props) {
           onClose={() => setOpenWithAnchor(null)}
           anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
           transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-          // Let the submenu's modal backdrop pass pointer events through to the
-          // parent menu, so its other items (e.g. reorder) stay clickable while
-          // this hover-opened submenu is shown. The paper re-enables clicks.
-          slotProps={{
-            root: { sx: { pointerEvents: 'none' } },
-            paper: { sx: { pointerEvents: 'auto' } },
-          }}
+          // Desktop: let the submenu's modal backdrop pass pointer events through
+          // to the parent menu, so its other items (e.g. reorder) stay clickable
+          // while this hover-opened submenu is shown (the paper re-enables
+          // clicks). Since it opens on hover, close it on hover-out. On touch
+          // there is no hover, so keep a normal modal backdrop — tapping outside
+          // dismisses it.
+          slotProps={
+            AppConfig.isNativeMobile
+              ? undefined
+              : {
+                  root: { sx: { pointerEvents: 'none' } },
+                  paper: {
+                    sx: { pointerEvents: 'auto' },
+                    onMouseLeave: () => setOpenWithAnchor(null),
+                  },
+                }
+          }
         >
           <TsMenuList>
             {openWithCandidates.map((c) => (

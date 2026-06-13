@@ -1,19 +1,12 @@
 import AppConfig from '-/AppConfig';
 import {
-  AddExistingFileIcon,
-  AudioRecordIcon,
   ChangeBackgroundIcon,
   CopyMoveIcon,
   CopyPictureIcon,
   DeleteIcon,
   EntryPropertiesIcon,
-  HTMLFileIcon,
   ImportTagsIcon,
-  LinkFileIcon,
   LinkIcon,
-  MarkdownFileIcon,
-  NewFileIcon,
-  NewFolderIcon,
   OpenEntryNativelyIcon,
   OpenFolderIcon,
   OpenNewWindowIcon,
@@ -21,11 +14,10 @@ import {
   ReloadIcon,
   RenameIcon,
   TagIcon,
-  TemplateFileIcon,
 } from '-/components/CommonIcons';
 import { ProLabel } from '-/components/HelperComponents';
-import InfoIcon from '-/components/InfoIcon';
 import MenuKeyBinding from '-/components/menus/MenuKeyBinding';
+import NewSubMenu from '-/perspectives/common/NewSubMenu';
 import { Pro } from '-/pro';
 import {
   getKeyBindingObject,
@@ -244,157 +236,29 @@ export function getDirectoryMenuItems(
     );
   }
   menuItems.push(<Divider key={`divider-${menuItems.length}`} />);
-  if (!isReadOnlyMode && !perspectiveMode) {
-    if (createNewFile) {
-      menuItems.push(
-        <MenuItem
-          key="createNewTextFile"
-          data-tid="createNewTextFileTID"
-          onClick={() => {
-            onClose();
-            createNewFile('txt');
-          }}
-        >
-          <ListItemIcon>
-            <NewFileIcon />
-          </ListItemIcon>
-          <ListItemText primary={t('core:createTextFile')} />
-        </MenuItem>,
-      );
-
-      menuItems.push(
-        <MenuItem
-          key="createNewMarkdownFile"
-          data-tid="createNewMarkdownFileTID"
-          onClick={() => {
-            onClose();
-            createNewFile('md');
-          }}
-        >
-          <ListItemIcon>
-            <MarkdownFileIcon />
-          </ListItemIcon>
-          <ListItemText primary={t('core:createMarkdown')} />
-          <InfoIcon tooltip={t('core:createMarkdownTitle')} />
-        </MenuItem>,
-      );
-      menuItems.push(
-        <MenuItem
-          key="createHTMLTextFile"
-          data-tid="createHTMLTextFileTID"
-          onClick={() => {
-            onClose();
-            createNewFile('html');
-          }}
-        >
-          <ListItemIcon>
-            <HTMLFileIcon />
-          </ListItemIcon>
-          <ListItemText primary={t('core:createRichTextFile')} />
-          <InfoIcon tooltip={t('core:createNoteTitle')} />
-        </MenuItem>,
-      );
-      menuItems.push(
-        <MenuItem
-          key="createNewLinkFile"
-          data-tid="createNewLinkFileTID"
-          onClick={() => {
-            onClose();
-            createNewFile('url');
-          }}
-        >
-          <ListItemIcon>
-            <LinkFileIcon />
-          </ListItemIcon>
-          <ListItemText primary={t('core:createLinkFile')} />
-        </MenuItem>,
-      );
-      if (!hideProFeatures) {
-        menuItems.push(
-          <MenuItem
-            key="createNewFromTemplate"
-            data-tid="createNewFromTemplateTID"
-            disabled={!Pro}
-            onClick={() => {
-              onClose();
-              createNewFile();
-            }}
-          >
-            <ListItemIcon>
-              <TemplateFileIcon />
-            </ListItemIcon>
-            <ListItemText
-              primary={
-                <>
-                  {t('core:createNewFromTemplate')}
-                  {!Pro && <ProLabel />}
-                </>
-              }
-            />
-          </MenuItem>,
-        );
-      }
-    }
-    if (createNewAudio && !hideProFeatures) {
-      menuItems.push(
-        <MenuItem
-          key="createNewAudio"
-          data-tid="createNewAudioTID"
-          disabled={!Pro}
-          onClick={() => {
-            onClose();
-            createNewAudio();
-          }}
-        >
-          <ListItemIcon>
-            <AudioRecordIcon />
-          </ListItemIcon>
-          <ListItemText
-            primary={
-              <>
-                {t('core:newAudioRecording')}
-                {!Pro && <ProLabel />}
-              </>
-            }
-          />
-        </MenuItem>,
-      );
-    }
-    if (showCreateDirectoryDialog) {
-      menuItems.push(<Divider key={`divider-${menuItems.length}`} />);
-      menuItems.push(
-        <MenuItem
-          key="newSubDirectory"
-          data-tid="newSubDirectory"
-          onClick={() => {
-            onClose();
-            showCreateDirectoryDialog();
-          }}
-        >
-          <ListItemIcon>
-            <NewFolderIcon />
-          </ListItemIcon>
-          <ListItemText primary={t('core:newSubdirectory')} />
-        </MenuItem>,
-      );
-    }
-    if (addExistingFile) {
-      menuItems.push(
-        <MenuItem
-          key="addExistingFile"
-          data-tid="addExistingFile"
-          onClick={() => {
-            onClose();
-            addExistingFile();
-          }}
-        >
-          <ListItemIcon>
-            <AddExistingFileIcon />
-          </ListItemIcon>
-          <ListItemText primary={t('core:addFiles')} />
-        </MenuItem>,
-      );
-    }
+  // All create/add actions (new text/markdown/rich-text/link/template/audio
+  // file, new subfolder, add from device) are grouped into a single "New ▸"
+  // submenu — see NewSubMenu. It owns its own submenu state, so it's pushed as
+  // one self-contained element.
+  if (
+    !isReadOnlyMode &&
+    !perspectiveMode &&
+    (createNewFile ||
+      createNewAudio ||
+      showCreateDirectoryDialog ||
+      addExistingFile)
+  ) {
+    menuItems.push(
+      <NewSubMenu
+        key="newSubMenu"
+        onClose={onClose}
+        t={t}
+        createNewFile={createNewFile}
+        createNewAudio={createNewAudio}
+        showCreateDirectoryDialog={showCreateDirectoryDialog}
+        addExistingFile={addExistingFile}
+      />,
+    );
   }
   if (selectedEntries.length < 2) {
     menuItems.push(<Divider key={`divider-${menuItems.length}`} />);
