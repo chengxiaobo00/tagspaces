@@ -1128,6 +1128,24 @@ export const IOActionsContextProvider = ({
         try {
           fileName = decodeURIComponent(file.name);
         } catch (ex) {}
+        // Camera / photo-library captures on mobile arrive with generic,
+        // colliding names (iOS names every capture "image.jpg", videos
+        // "video.mov"), so a second capture is skipped as "already exists".
+        // Tag imported images and videos with the capture timestamp to make
+        // each import unique, e.g. "image [20260612T122345].jpg".
+        if (
+          AppConfig.isNativeMobile &&
+          (file.type?.startsWith('image/') || file.type?.startsWith('video/'))
+        ) {
+          fileName = generateFileName(
+            fileName,
+            [formatDateTime4Tag(new Date(), true)],
+            tagDelimiter,
+            currentLocation?.getDirSeparator(),
+            ' ', // space before the [tag] container → "name [tag].ext"
+            true, // place the tag at the end of the filename
+          );
+        }
         let filePath = joinPaths(
           currentLocation?.getDirSeparator(),
           targetPath,
