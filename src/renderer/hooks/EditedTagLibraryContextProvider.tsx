@@ -63,9 +63,19 @@ export const EditedTagLibraryContextProvider = ({
   const instanceId = useRef<string>(getUuid());
   const broadcast = useMemo(() => new BroadcastChannel('tag-library-sync'), []);
 
+  // Re-run when getTagsFromLocations changes too: it changes identity once the
+  // locations finish loading on startup, which is what lets the location tag
+  // groups merge in on first launch (not only after a second window opened).
   useEffect(() => {
     refreshTagLibrary();
-  }, [saveTagInLocation]);
+  }, [saveTagInLocation, getTagsFromLocations]);
+
+  // The broadcast handler is registered once (the channel is created/closed
+  // once), so route it through a ref to always call the current
+  // refreshTagLibrary — otherwise it would invoke the first-render closure,
+  // which captured the pre-rehydration saveTagInLocation and empty locations.
+  const refreshRef = useRef(refreshTagLibrary);
+  refreshRef.current = refreshTagLibrary;
 
   // Listen for incoming broadcasts
   useEffect(() => {
@@ -75,7 +85,7 @@ export const EditedTagLibraryContextProvider = ({
       if (action.uuid === instanceId.current) return;
 
       if (action.type === 'tagLibraryChanged') {
-        refreshTagLibrary(true);
+        refreshRef.current(true);
       }
     };
     // clean up on unmount
@@ -122,7 +132,10 @@ export const EditedTagLibraryContextProvider = ({
       broadcast: broadcast,
       setTagGroups,
       reflectTagLibraryChanged,
-      refreshTagLibrary,
+      // Via the ref so the manual "Refresh tag library" action always runs the
+      // current closure (latest saveTagInLocation / locations), not the one
+      // captured the last time `tagGroups` changed.
+      refreshTagLibrary: (force?: boolean) => refreshRef.current(force),
     };
   }, [tagGroups]);
 

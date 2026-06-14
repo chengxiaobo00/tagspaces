@@ -407,7 +407,13 @@ export const TagGroupsLocationContextProvider = ({
       loadLocationDataPromise,
       getTagsFromLocations,
     };
-  }, [saveTagInLocation]);
+    // `locations` must be a dependency: getTagsFromLocations closes over it, and
+    // on first launch locations populate (async Redux rehydration) AFTER this
+    // provider first renders. Without it the closure stays bound to the empty
+    // initial array, so location tag groups never load until something else
+    // (e.g. a second window) rebuilds the context. Its identity changes when
+    // CurrentLocationContext reassigns allLocations.current.
+  }, [saveTagInLocation, locations]);
 
   return (
     <TagGroupsLocationContext.Provider value={context}>

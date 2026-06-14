@@ -656,6 +656,10 @@ function SettingsGeneral() {
         },
         {
           label: t('core:fileTaggingSetting'),
+          description:
+            t('core:tagsInFilenameExplanation') +
+            ' ' +
+            t('core:tagsInSidecarFileExplanation'),
           jsx: (
             <ListItem
               title={
@@ -724,6 +728,10 @@ function SettingsGeneral() {
         },
         !persistTagsInSidecarFile && {
           label: t('core:fileNameTagSetting'),
+          description:
+            t('core:fileNameBeginTagPlaceExplanation') +
+            ' ' +
+            t('core:fileNameEndTagPlaceExplanation'),
           jsx: (
             <ListItem
               title={
@@ -1030,6 +1038,7 @@ function SettingsGeneral() {
         },
         AppConfig.isElectron && {
           label: t('core:useTrashCan'),
+          description: t('core:useTrashCanInfo'),
           jsx: (
             <ListItem>
               <ListItemText
@@ -1070,6 +1079,7 @@ function SettingsGeneral() {
         },
         {
           label: t('core:showSymbolicLinks'),
+          description: t('core:showSymbolicLinksInfo'),
           jsx: (
             <ListItem>
               <ListItemText
@@ -1176,6 +1186,7 @@ function SettingsGeneral() {
         },
         devMode && {
           label: t('core:tagDelimiter'),
+          description: t('core:tagDelimiterInfo'),
           jsx: (
             <ListItem>
               <ListItemText
@@ -1217,6 +1228,7 @@ function SettingsGeneral() {
         },
         {
           label: t('core:prefixTagContainer'),
+          description: t('core:prefixTagContainerInfo'),
           jsx: (
             <ListItem>
               <ListItemText
@@ -1264,6 +1276,7 @@ function SettingsGeneral() {
         },
         {
           label: t('core:author'),
+          description: t('core:authorVariableTooltip'),
           jsx: (
             <ListItem>
               <ListItemText
@@ -1311,6 +1324,7 @@ function SettingsGeneral() {
         },
         {
           label: t('core:setRevisionsEnabled'),
+          description: t('core:setRevisionsEnabledHelp'),
           jsx: (
             <ListItem>
               <ListItemText
@@ -1334,7 +1348,8 @@ function SettingsGeneral() {
           ),
         },
         {
-          label: t('core:settingExternallyConfigured'),
+          label: t('enableTagsFromLocation'),
+          description: t('core:enableTagsFromLocationHelp'),
           jsx: (
             <ListItem
               title={
@@ -1678,6 +1693,7 @@ function SettingsGeneral() {
         },
         {
           label: t('enableDevMode'),
+          description: t('core:devModeTooltip'),
           jsx: (
             <ListItem>
               <ListItemText
@@ -1699,6 +1715,7 @@ function SettingsGeneral() {
         },
         {
           label: t('core:encryptCredentialsAtRest'),
+          description: t('core:encryptCredentialsAtRestTooltip'),
           jsx: (
             <ListItem
               title={
@@ -1801,12 +1818,15 @@ function SettingsGeneral() {
     ],
   );
 
-  // Filter settings by label and description
+  // Filter settings by label and description (the latter mirrors each row's
+  // help tooltip so users can search by the explanatory text too).
   const filteredSettings = useMemo(() => {
     if (!filterText.trim()) return settingsItems;
     const lowerFilter = filterText.toLowerCase();
     return settingsItems.filter((item) =>
-      item.label.toLowerCase().includes(lowerFilter),
+      (item.label + ' ' + (item.description || ''))
+        .toLowerCase()
+        .includes(lowerFilter),
     );
   }, [filterText, settingsItems]);
 
