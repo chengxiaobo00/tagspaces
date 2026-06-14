@@ -228,11 +228,9 @@ function TagContainer({
           {(isTagDate || isDateSmartTag) && (
             <DateIcon sx={{ color: txtColor, height: 16, ml: '-5px' }} />
           )}
-          {!isTagGeo &&
-            !(
-              (isTagDate || isDateSmartTag) &&
-              (originalTitle?.length ?? 0) > 8
-            ) && <span>{displayTitle}</span>}
+          {!isTagGeo && !(isTagDate && (originalTitle?.length ?? 0) > 8) && (
+            <span>{displayTitle}</span>
+          )}
         </Box>
 
         <TagContainerMenu

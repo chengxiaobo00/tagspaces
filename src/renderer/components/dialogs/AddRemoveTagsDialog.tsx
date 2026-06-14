@@ -25,6 +25,7 @@ import TsDialogActions from '-/components/dialogs/components/TsDialogActions';
 import TsDialogTitle from '-/components/dialogs/components/TsDialogTitle';
 import { useSelectedEntriesContext } from '-/hooks/useSelectedEntriesContext';
 import { useTaggingActionsContext } from '-/hooks/useTaggingActionsContext';
+import { isDesktopMode } from '-/reducers/settings';
 import SmartTags from '-/reducers/smart-tags';
 import { TS } from '-/tagspaces.namespace';
 import Box from '@mui/material/Box';
@@ -36,6 +37,7 @@ import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useReducer, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSelector } from 'react-redux';
 import TagsSelect from '../TagsSelect';
 
 interface Props {
@@ -47,7 +49,7 @@ interface Props {
 function AddRemoveTagsDialog(props: Props) {
   const { t } = useTranslation();
   const { open, selected } = props;
-
+  const desktopMode = useSelector(isDesktopMode);
   const { addTagsToFsEntries, removeTags, addTags } =
     useTaggingActionsContext();
   const { selectedEntries } = useSelectedEntriesContext();
@@ -164,7 +166,7 @@ function AddRemoveTagsDialog(props: Props) {
           tagMode="remove"
           autoFocus={true}
         />
-        {smallScreen && AppConfig.ExtShowSmartTags && (
+        {!desktopMode && AppConfig.ExtShowSmartTags && (
           <Box sx={{ marginTop: 1.5 }}>
             <Typography variant="caption" color="textSecondary">
               {t('core:smartTags')}
