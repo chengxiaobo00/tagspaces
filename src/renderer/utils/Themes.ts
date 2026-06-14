@@ -57,6 +57,14 @@ export const createTSTheme = (themeName: string, isDark: boolean = false) => {
           }),
         },
       },
+      // Round the corners of every context menu / dropdown menu surface.
+      MuiMenu: {
+        styleOverrides: {
+          paper: {
+            borderRadius: AppConfig.defaultCSSRadius,
+          },
+        },
+      },
     },
   });
 };
