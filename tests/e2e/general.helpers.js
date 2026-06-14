@@ -5,7 +5,12 @@ import AppConfig from '../../src/renderer/AppConfig';
 import { dataTidFormat } from '../../src/renderer/services/test';
 import { getS3File } from '../s3rver/S3DataRefresh';
 import { createFileS3, createLocalFile, delay } from './hook';
-import { firstFile, openContextEntryMenu, toContainTID } from './test-utils';
+import {
+  clickOnMenuOperation,
+  firstFile,
+  openContextEntryMenu,
+  toContainTID,
+} from './test-utils';
 
 import fse from 'fs-extra';
 import {
@@ -1146,7 +1151,7 @@ export async function reloadDirectory() {
 export async function createNewDirectory(dirName = testFolder) {
   await isDisplayed('[data-tid=folderContainerOpenDirMenu]', true, 8000);
   await clickOn('[data-tid=folderContainerOpenDirMenu]');
-  await clickOn('[data-tid=newSubDirectory]');
+  await clickOnMenuOperation('newSubDirectory');
   // set new dir name
   await setInputValue('[data-tid=directoryName] input', dirName);
   await clickOn('[data-tid=confirmCreateNewDirectory]');
@@ -1157,21 +1162,21 @@ export async function createNewDirectory(dirName = testFolder) {
 
 export async function newHTMLFile() {
   await clickOn('[data-tid=folderContainerOpenDirMenu]');
-  await clickOn('[data-tid=createHTMLTextFileTID]');
+  await clickOnMenuOperation('createHTMLTextFileTID');
   await clickOn('[data-tid=createTID]');
   await waitForNotification();
 }
 
 export async function newMDFile() {
   await clickOn('[data-tid=folderContainerOpenDirMenu]');
-  await clickOn('[data-tid=createNewMarkdownFileTID]');
+  await clickOnMenuOperation('createNewMarkdownFileTID');
   await clickOn('[data-tid=createTID]');
   await waitForNotification();
 }
 
 export async function createTxtFile() {
   await clickOn('[data-tid=folderContainerOpenDirMenu]');
-  await clickOn('[data-tid=createNewTextFileTID]');
+  await clickOnMenuOperation('createNewTextFileTID');
   await clickOn('[data-tid=createTID]');
   await waitForNotification();
 }
