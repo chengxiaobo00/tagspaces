@@ -38,6 +38,14 @@ import { clearDataStorage, closeWelcomePlaywright } from './welcome.helpers';
 const tslContent =
   '{"appName":"TagSpaces","appVersion":"5.3.6","description":"","lastUpdated":"2023-06-08T16:51:23.926Z","tagGroups":[{"uuid":"collected_tag_group_id","title":"Collected Tags","color":"#61DD61","textcolor":"white","children":[{"title":"Stanimir","color":"#61DD61","textcolor":"white","type":"sidecar"}],"created_date":1686119562860,"modified_date":1686243083871,"expanded":true,"locationId":"dc1ffaaeeb5747e39dd171c7e551afd6"}]}';
 
+// Hard reload the renderer to re-run the bootstrap (redux-persist rehydration),
+// i.e. simulate relaunching the app / opening a fresh window.
+async function reloadApp() {
+  await global.client.reload();
+  await global.client.waitForLoadState('load');
+  await closeWelcomePlaywright();
+}
+
 test.afterEach(async () => {
   await clearDataStorage();
   await stopApp();
@@ -443,5 +451,183 @@ test.describe('TST04 - Testing the tag library:', () => {
     );
     await expectElementExist('[data-tid=tagContainer_Stanimir]', false);
     //TODO check in tsl.json content
+  });
+
+  test('TST0427 - Load tag groups from location after app restart [web,s3,electron,_pro]', async ({
+    isS3,
+    testDataDir,
+  }) => {
+    const testTagName = 'Stanimir';
+    await createLocation({ isS3, testDataDir });
+
+    if (isS3) {
+      await createFileS3('tsl.json', tslContent, '.ts');
+    } else {
+      await createLocalFile(testDataDir, 'tsl.json', tslContent, '.ts');
+    }
+
+    // Enable the Pro "tags from location" setting; this is now persisted, so on
+    // the next launch it is already true on boot.
+    await checkSettings(
+      '[data-tid=saveTagInLocationTID]',
+      true,
+      '[data-tid=generalSettingsDialog]',
+    );
+
+    // Baseline: the location tag group loads in the current session (works even
+    // without the fix, because toggling the setting on rebuilds the loader after
+    // the location is already present).
+    await clickOn('[data-tid=tagLibrary]');
+    await expectElementExist(
+      '[data-tid=tagContainer_' + testTagName + ']',
+      true,
+      15000,
+    );
+
+    // Regression guard for the startup race: after a restart saveTagInLocation
+    // is already true, and locations rehydrate asynchronously. The location tag
+    // groups must still load on this first launch — previously they stayed
+    // missing until a second window was opened.
+    await reloadApp();
+    await clickOn('[data-tid=tagLibrary]');
+    await expectElementExist(
+      '[data-tid=tagContainer_' + testTagName + ']',
+      true,
+      15000,
+    );
+  });
+
+  test('TST0428 - Created location tag group survives app restart [web,s3,electron,_pro]', async ({
+    isS3,
+    testDataDir,
+  }) => {
+    await createLocation({ isS3, testDataDir });
+    await clickOn('[data-tid=tagLibrary]');
+    await checkSettings(
+      '[data-tid=saveTagInLocationTID]',
+      true,
+      '[data-tid=generalSettingsDialog]',
+    );
+
+    // Create a tag group bound to the location → persisted into its tsl.json.
+    await createTagGroup(testGroup, defaultLocationName);
+    await clickOn('[data-tid=locationManager]');
+    await clickOn('[data-tid=location_' + defaultLocationName + ']');
+    await expectElementExist(getGridFileSelector('empty_folder'), true, 15000);
+    await expectMetaFilesExist(['tsl.json'], true);
+
+    // After a restart the group must reappear from the location on first launch.
+    await reloadApp();
+    await clickOn('[data-tid=tagLibrary]');
+    await expectElementExist(
+      '[data-tid=tagLibraryTagGroupTitle_' + testGroup + ']',
+      true,
+      15000,
+    );
+    // cleanup
+    await deleteTagGroup(testGroup);
+  });
+
+  test('TST0429 - Delete a location based tag group [web,s3,electron,_pro]', async ({
+    isS3,
+    testDataDir,
+  }) => {
+    await createLocation({ isS3, testDataDir });
+    await clickOn('[data-tid=tagLibrary]');
+    await checkSettings(
+      '[data-tid=saveTagInLocationTID]',
+      true,
+      '[data-tid=generalSettingsDialog]',
+    );
+
+    await createTagGroup(testGroup, defaultLocationName);
+    // Removing it writes back to the location's tsl.json (removeLocationTagGroup).
+    await deleteTagGroup(testGroup);
+
+    // Still gone after a restart — the deletion was persisted to the location,
+    // not just dropped from the in-memory library.
+    await reloadApp();
+    await clickOn('[data-tid=tagLibrary]');
+    await expectElementExist(
+      '[data-tid=tagLibraryTagGroupTitle_' + testGroup + ']',
+      false,
+      15000,
+    );
+  });
+
+  test('TST0430 - Add multiple tag groups to a location [web,s3,electron,_pro]', async ({
+    isS3,
+    testDataDir,
+  }) => {
+    const groupA = 'locTagGroupA';
+    const groupB = 'locTagGroupB';
+    await createLocation({ isS3, testDataDir });
+    await clickOn('[data-tid=tagLibrary]');
+    await checkSettings(
+      '[data-tid=saveTagInLocationTID]',
+      true,
+      '[data-tid=generalSettingsDialog]',
+    );
+
+    // Two distinct tag groups, both bound to the same location → both end up in
+    // the single location tsl.json.
+    await createTagGroup(groupA, defaultLocationName);
+    await createTagGroup(groupB, defaultLocationName);
+    await clickOn('[data-tid=locationManager]');
+    await clickOn('[data-tid=location_' + defaultLocationName + ']');
+    await expectElementExist(getGridFileSelector('empty_folder'), true, 15000);
+    await expectMetaFilesExist(['tsl.json'], true);
+
+    // Both reload from the location on first launch.
+    await reloadApp();
+    await clickOn('[data-tid=tagLibrary]');
+    await expectElementExist(
+      '[data-tid=tagLibraryTagGroupTitle_' + groupA + ']',
+      true,
+      15000,
+    );
+    await expectElementExist(
+      '[data-tid=tagLibraryTagGroupTitle_' + groupB + ']',
+      true,
+      15000,
+    );
+    // cleanup
+    await deleteTagGroup(groupA);
+    await deleteTagGroup(groupB);
+  });
+
+  test('TST0431 - Deleted tag in location tag group stays deleted after restart [web,s3,electron,_pro]', async ({
+    isS3,
+    testDataDir,
+  }) => {
+    await createLocation({ isS3, testDataDir });
+
+    if (isS3) {
+      await createFileS3('tsl.json', tslContent, '.ts');
+    } else {
+      await createLocalFile(testDataDir, 'tsl.json', tslContent, '.ts');
+    }
+    await checkSettings(
+      '[data-tid=saveTagInLocationTID]',
+      true,
+      '[data-tid=generalSettingsDialog]',
+    );
+
+    await clickOn('[data-tid=tagLibrary]');
+    await expectElementExist('[data-tid=tagContainer_Stanimir]', true, 15000);
+
+    // Deleting the tag rewrites the location's tsl.json (editLocationTagGroup).
+    await tagMenu('Stanimir', 'deleteTagDialog');
+    await clickOn('[data-tid=confirmDeleteTagDialogTagMenu]');
+    await expectElementExist('[data-tid=tagContainer_Stanimir]', false);
+
+    // The tag must not come back when the location is re-read on restart.
+    await reloadApp();
+    await clickOn('[data-tid=tagLibrary]');
+    await expectElementExist(
+      '[data-tid=tagContainer_Stanimir]',
+      false,
+      15000,
+    );
   });
 });
