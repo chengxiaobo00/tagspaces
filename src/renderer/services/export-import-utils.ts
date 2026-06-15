@@ -16,17 +16,17 @@
  *
  */
 
-import { decryptString, encryptString } from '-/services/secure-crypto';
-import { saveAsTextFile } from '-/services/utils-io';
-import { TS } from '-/tagspaces.namespace';
-import versionMeta from '-/version.json';
-import { formatDateTime4Tag } from '@tagspaces/tagspaces-common/misc';
 import {
   EXPORT_VERSION,
   TransferEnvelope,
   cleanSearchesForExport,
   stripNonImportableSettings,
 } from '-/services/export-import-validators';
+import { decryptString, encryptString } from '-/services/secure-crypto';
+import { saveAsTextFile } from '-/services/utils-io';
+import { TS } from '-/tagspaces.namespace';
+import versionMeta from '-/version.json';
+import { formatDateTime4Tag } from '@tagspaces/tagspaces-common/misc';
 
 // Re-export the pure logic so existing call sites keep one import surface.
 export {
@@ -112,7 +112,10 @@ export async function downloadEnvelope(
   // On native mobile saveAsTextFile returns a promise (native write + share);
   // await it so the caller's "successfully exported" notification only fires
   // once the file is actually persisted. On desktop/web it resolves to void.
-  await saveAsTextFile(blob, `tagspaces-export [${dateTimeTag}]${ext}`);
+  await saveAsTextFile(
+    blob,
+    `tagspaces-settings-export [${dateTimeTag}]${ext}`,
+  );
 }
 
 export function readImportFile(
