@@ -30,9 +30,8 @@ import {
   isDirectory,
 } from '@tagspaces/tagspaces-common-node/io-node';
 import fs from 'fs-extra';
-import http from 'http';
-import https from 'https';
 import path from 'path';
+import { Readable } from 'stream';
 import WebSocket from 'ws';
 import {
   getOnProgress,
@@ -49,6 +48,37 @@ import registerSecureStorageEvents from './secureStorage';
 
 //let watcher: FSWatcher;
 const progress = {};
+
+// A desktop-Chrome User-Agent so remote servers treat our downloads like a
+// regular browser request. Many sites reject the default Electron/Node agent
+// (403 "non-browser host"), which is why direct downloads previously failed.
+const BROWSER_USER_AGENT =
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
+
+function browserHeaders(url: string): Record<string, string> {
+  const headers: Record<string, string> = {
+    'User-Agent': BROWSER_USER_AGENT,
+    Accept: '*/*',
+  };
+  try {
+    headers.Referer = new URL(url).origin;
+  } catch (e) {
+    // invalid URL — net.fetch will reject below
+  }
+  return headers;
+}
+
+// Only allow http/https downloads. Without this, net.fetch would also resolve
+// file:// (local file read) and other schemes — an SSRF / local-file-read risk,
+// especially since image URLs are taken from fetched (untrusted) page content.
+function isHttpUrl(url: string): boolean {
+  try {
+    const { protocol } = new URL(url);
+    return protocol === 'http:' || protocol === 'https:';
+  } catch (e) {
+    return false;
+  }
+}
 let wsc;
 const controllers = new Map(); // requestId -> AbortController
 
@@ -112,59 +142,104 @@ export default function loadMainEvents() {
     return `data:${contentType};base64,${base64}`;
   });
 
-  ipcMain.handle('fetchUrl', async (event, url, targetPath, withProgress) => {
-    function fetchHttp(url) {
-      return new Promise((resolve, reject) => {
-        const client = url.startsWith('https') ? https : http;
-
-        client
-          .get(url, (res) => {
-            let downloadedSize = 0;
-            const totalSize = parseInt(res.headers['content-length'], 10);
-
-            let onUploadProgress = undefined;
-            if (withProgress) {
-              progress['fetchUrl'] = newProgress('fetchUrl', totalSize);
-              onUploadProgress = getOnProgress('fetchUrl', progress);
-            }
-
-            const fileStream = fs.createWriteStream(targetPath); // Write file to disk
-            // Pipe the response data into the file
-            res.pipe(fileStream);
-
-            // Collect data chunks and calculate size
-            res.on('data', (chunk) => {
-              downloadedSize += chunk.length; // Add the size of the current chunk
-              if (onUploadProgress) {
-                onUploadProgress(
-                  { key: targetPath, loaded: downloadedSize, total: totalSize },
-                  undefined,
-                );
-              }
-            });
-
-            // Resolve the response on end
-            res.on('end', () => {
-              if (onUploadProgress) {
-                onUploadProgress(
-                  { key: targetPath, loaded: 1, total: 1 },
-                  undefined,
-                );
-              }
-              resolve({ success: true, filePath: targetPath });
-            });
-          })
-          .on('error', (err) => {
-            reject(err);
-          });
-      });
+  // Download a URL straight to disk (local locations). Uses Electron's net.fetch
+  // (Chromium network stack — shares session/cookies, follows redirects, honors
+  // proxy/gzip, and is not bound by the renderer's CSP or the server's CORS) with
+  // browser-like headers so servers don't block us as a non-browser host.
+  ipcMain.handle('fetchUrl', async (_event, url, targetPath, withProgress) => {
+    if (!isHttpUrl(url)) {
+      return { error: 'Unsupported URL scheme (only http/https allowed)' };
     }
-
     try {
-      const response = await fetchHttp(url);
-      return response;
+      const response = await net.fetch(url, { headers: browserHeaders(url) });
+      if (!response.ok) {
+        return { error: `${response.status} ${response.statusText}` };
+      }
+      const contentType = response.headers.get('content-type') || '';
+      const totalSize = parseInt(
+        response.headers.get('content-length') || '',
+        10,
+      );
+
+      let onUploadProgress;
+      if (withProgress) {
+        progress['fetchUrl'] = newProgress('fetchUrl', totalSize);
+        onUploadProgress = getOnProgress('fetchUrl', progress);
+      }
+
+      await new Promise<void>((resolve, reject) => {
+        const fileStream = fs.createWriteStream(targetPath);
+        const nodeStream = Readable.fromWeb(response.body as any);
+        let downloadedSize = 0;
+        nodeStream.on('data', (chunk) => {
+          downloadedSize += chunk.length;
+          if (onUploadProgress) {
+            onUploadProgress(
+              { key: targetPath, loaded: downloadedSize, total: totalSize },
+              undefined,
+            );
+          }
+        });
+        nodeStream.on('error', reject);
+        fileStream.on('error', reject);
+        fileStream.on('finish', resolve);
+        nodeStream.pipe(fileStream);
+      });
+
+      if (onUploadProgress) {
+        onUploadProgress({ key: targetPath, loaded: 1, total: 1 }, undefined);
+      }
+      return { success: true, filePath: targetPath, contentType };
     } catch (error) {
       return { error: error.message };
+    }
+  });
+
+  // Fetch a URL and return its bytes (object-store locations + image inlining for
+  // the HTML/Markdown "save as" formats). Same browser-stack request as fetchUrl.
+  // `options` lets callers harden untrusted sub-resource fetches (page images):
+  //   omitCredentials — don't send the app session's cookies to the target
+  //   maxBytes        — reject oversized responses (memory/disk DoS guard)
+  //   timeoutMs       — abort hung requests
+  ipcMain.handle('fetchUrlBuffer', async (_event, url, options = {}) => {
+    if (!isHttpUrl(url)) {
+      return { error: 'Unsupported URL scheme (only http/https allowed)' };
+    }
+    const { omitCredentials, maxBytes, timeoutMs } = options;
+    const controller = new AbortController();
+    const timer = timeoutMs
+      ? setTimeout(() => controller.abort(), timeoutMs)
+      : undefined;
+    try {
+      const response = await net.fetch(url, {
+        headers: browserHeaders(url),
+        credentials: omitCredentials ? 'omit' : undefined,
+        signal: controller.signal,
+      });
+      if (!response.ok) {
+        return { error: `${response.status} ${response.statusText}` };
+      }
+      if (maxBytes) {
+        const declared = parseInt(
+          response.headers.get('content-length') || '',
+          10,
+        );
+        if (Number.isFinite(declared) && declared > maxBytes) {
+          return { error: 'Response too large' };
+        }
+      }
+      const contentType = response.headers.get('content-type') || '';
+      const data = await response.arrayBuffer();
+      if (maxBytes && data.byteLength > maxBytes) {
+        return { error: 'Response too large' };
+      }
+      return { data, contentType };
+    } catch (error) {
+      return { error: error.message };
+    } finally {
+      if (timer) {
+        clearTimeout(timer);
+      }
     }
   });
   ipcMain.handle('isWorkerAvailable', async () => {

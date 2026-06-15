@@ -20,7 +20,7 @@ const {
 const U = require('./capacitor-io-utils');
 
 // Capacitor imports
-const { Capacitor } = require('@capacitor/core');
+const { Capacitor, CapacitorHttp } = require('@capacitor/core');
 const { Filesystem, Directory, Encoding } = require('@capacitor/filesystem');
 const { App } = require('@capacitor/app');
 const { Device } = require('@capacitor/device');
@@ -1144,6 +1144,32 @@ function shareFiles(files) {
 }
 
 /**
+ * Fetch a remote URL over the native HTTP stack. WKWebView rejects cross-origin
+ * fetch() from the capacitor:// origin with "Load failed"; CapacitorHttp runs
+ * the request natively and isn't bound by CORS. Returns the body as a base64
+ * string plus the content-type (the shape the native plugin yields for a binary
+ * responseType), leaving byte/data-URL conversion to the caller.
+ */
+function httpGet(url) {
+  return CapacitorHttp.request({
+    url,
+    method: 'GET',
+    responseType: 'arraybuffer',
+  }).then((res) => {
+    if (res.status < 200 || res.status >= 300) {
+      throw new Error('HTTP ' + res.status);
+    }
+    const contentType =
+      (res.headers &&
+        (res.headers['content-type'] || res.headers['Content-Type'])) ||
+      '';
+    // Native returns the binary body as a base64 string.
+    const base64 = typeof res.data === 'string' ? res.data : '';
+    return { base64, contentType };
+  });
+}
+
+/**
  * Download a file under Capacitor. Replaces the Cordova-only
  * `window.plugins.Downloader`, which is undefined under Capacitor.
  *
@@ -1278,5 +1304,6 @@ export {
   focusWindow,
   shareFiles,
   downloadFile,
+  httpGet,
   getNativeFileUrlAsync,
 };

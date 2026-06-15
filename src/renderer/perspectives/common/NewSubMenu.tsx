@@ -19,6 +19,7 @@ import AppConfig from '-/AppConfig';
 import {
   AddExistingFileIcon,
   AudioRecordIcon,
+  DownloadIcon,
   HTMLFileIcon,
   LinkFileIcon,
   MarkdownFileIcon,
@@ -27,7 +28,8 @@ import {
   SmallArrowRightIcon,
   TemplateFileIcon,
 } from '-/components/CommonIcons';
-import { ProLabel } from '-/components/HelperComponents';
+import { useDownloadUrlDialogContext } from '-/components/dialogs/hooks/useDownloadUrlDialogContext';
+import { BetaLabel, ProLabel } from '-/components/HelperComponents';
 import InfoIcon from '-/components/InfoIcon';
 import TsMenuList from '-/components/TsMenuList';
 import { Pro } from '-/pro';
@@ -67,6 +69,7 @@ function NewSubMenu(props: Props) {
     addExistingFile,
   } = props;
   const hideProFeatures: boolean = useSelector(isHideProFeatures);
+  const { openDownloadUrl } = useDownloadUrlDialogContext();
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 
   // Run a create action and dismiss the whole menu chain.
@@ -222,6 +225,23 @@ function NewSubMenu(props: Props) {
               <ListItemText primary={t('core:addFiles')} />
             </MenuItem>
           )}
+          <MenuItem
+            key="newFromDownloadURL"
+            data-tid="newFromDownloadURLTID"
+            onClick={() => run(() => openDownloadUrl())}
+          >
+            <ListItemIcon>
+              <DownloadIcon />
+            </ListItemIcon>
+            <ListItemText
+              primary={
+                <>
+                  {t('core:newFromDownloadURL')}
+                  <BetaLabel />
+                </>
+              }
+            />
+          </MenuItem>
         </TsMenuList>
       </Menu>
     </>

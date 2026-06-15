@@ -23,6 +23,7 @@ const submenuParentTid = {
   createNewAudioTID: 'createNewSubmenuTID',
   newSubDirectory: 'createNewSubmenuTID',
   addExistingFile: 'createNewSubmenuTID',
+  newFromDownloadURLTID: 'createNewSubmenuTID',
 };
 
 // Resolve the parent submenu trigger for a menu operation, if it lives in a

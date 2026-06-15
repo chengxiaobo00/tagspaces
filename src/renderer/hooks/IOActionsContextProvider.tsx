@@ -48,6 +48,11 @@ import {
   openFileMessage,
   runConcurrent,
 } from '-/services/utils-io';
+import {
+  ClipOptions,
+  htmlToCleanHtml,
+  htmlToMarkdown,
+} from '-/services/web-content';
 import { TS } from '-/tagspaces.namespace';
 import { CommonLocation } from '-/utils/CommonLocation';
 import { base64ToUint8Array } from '-/utils/dom';
@@ -125,6 +130,16 @@ type IOActionsContextData = {
     url: string,
     targetPath: string,
     onDownloadProgress?: (progress, abort, fileName?) => void,
+  ) => Promise<TS.FileSystemEntry>;
+  downloadUrlAs: (
+    url: string,
+    targetPath: string,
+    format: 'html' | 'markdown',
+    options?: {
+      extractArticle?: boolean;
+      embedImages?: boolean;
+      tags?: string;
+    },
   ) => Promise<TS.FileSystemEntry>;
   downloadFsEntry: (fsEntry: TS.FileSystemEntry) => void;
   uploadFilesAPI: (
@@ -259,6 +274,7 @@ export const IOActionsContext = createContext<IOActionsContextData>({
   copyDirs: undefined,
   copyFiles: undefined,
   downloadUrl: undefined,
+  downloadUrlAs: undefined,
   downloadFsEntry: undefined,
   uploadFilesAPI: undefined,
   uploadMeta: undefined,
@@ -946,17 +962,61 @@ export const IOActionsContextProvider = ({
       .catch(() => {});
   }
 
-  function fetchUrl(url: string, targetPath: string, haveProgress: boolean) {
+  /**
+   * Native HTTP GET on Capacitor (bypasses the WKWebView CORS that makes
+   * cross-origin fetch() fail with "Load failed"). The native call lives in the
+   * Capacitor IO module; this is just the platform indirection.
+   */
+  function capacitorHttpGet(
+    url: string,
+  ): Promise<{ base64: string; contentType: string }> {
+    // eslint-disable-next-line global-require
+    const ioAPI = require('-/services/io-capacitor');
+    return ioAPI.httpGet(url);
+  }
+
+  function fetchUrl(
+    url: string,
+    targetPath: string,
+    haveProgress: boolean,
+    objectStore: boolean,
+  ) {
     if (AppConfig.isElectron) {
-      return window.electronIO.ipcRenderer.invoke(
-        'fetchUrl',
-        url,
-        targetPath,
-        haveProgress,
-      );
+      // Object-store targets need the bytes back in the renderer so they can be
+      // uploaded into the bucket; local targets are streamed straight to disk in
+      // the main process. Both requests go through the Chromium network stack
+      // (browser User-Agent, no renderer CSP / server CORS limits).
+      if (objectStore) {
+        return window.electronIO.ipcRenderer
+          .invoke('fetchUrlBuffer', url)
+          .then((res) => {
+            if (res?.error) {
+              throw new Error(res.error);
+            }
+            return { arrayBuffer: () => Promise.resolve(res.data) };
+          });
+      }
+      return window.electronIO.ipcRenderer
+        .invoke('fetchUrl', url, targetPath, haveProgress)
+        .then((res) => {
+          if (res?.error) {
+            throw new Error(res.error);
+          }
+          return res;
+        });
+    }
+    if (AppConfig.isCapacitor) {
+      // WKWebView rejects cross-origin fetch() from the capacitor:// origin
+      // ("Load failed"). Route through the native HTTP plugin, which isn't bound
+      // by CORS, and expose an arrayBuffer() so saveFile() takes the same path
+      // as the web/object-store branch.
+      return capacitorHttpGet(url).then(({ base64 }) => ({
+        arrayBuffer: () => Promise.resolve(base64ToUint8Array(base64)),
+      }));
     }
     return fetch(url);
   }
+
   /**
    * @param url
    * @param targetPath
@@ -985,7 +1045,12 @@ export const IOActionsContextProvider = ({
         return saveFilePromise({ path: targetPath }, arrayBuffer, true);
       });
     }
-    return fetchUrl(url, targetPath, onDownloadProgress !== undefined)
+    return fetchUrl(
+      url,
+      targetPath,
+      onDownloadProgress !== undefined,
+      location.haveObjectStoreSupport(),
+    )
       .then((response) => saveFile(response))
       .then((fsEntry: TS.FileSystemEntry) => {
         return generateThumbnailPromise(
@@ -1018,6 +1083,111 @@ export const IOActionsContextProvider = ({
           return fsEntry;
         });
       });
+  }
+
+  /** Fetch a page's HTML, bypassing CORS/CSP via the main process on Electron. */
+  function fetchPageHtml(url: string): Promise<string> {
+    if (AppConfig.isElectron) {
+      return window.electronIO.ipcRenderer
+        .invoke('fetchUrlBuffer', url)
+        .then((res) => {
+          if (res?.error) {
+            throw new Error(res.error);
+          }
+          return new TextDecoder('utf-8').decode(res.data);
+        });
+    }
+    if (AppConfig.isCapacitor) {
+      return capacitorHttpGet(url).then(({ base64 }) =>
+        new TextDecoder('utf-8').decode(base64ToUint8Array(base64)),
+      );
+    }
+    return fetch(url).then((r) => {
+      if (!r.ok) {
+        throw new Error(`${r.status} ${r.statusText}`);
+      }
+      return r.text();
+    });
+  }
+
+  function blobToDataUrl(blob: Blob): Promise<string> {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  /**
+   * Resolve an image URL to a base64 data URL (CORS/CSP-free on Electron).
+   * Image URLs come from untrusted page content, so fetch them without the app
+   * session's cookies and with size/time caps to limit SSRF/DoS exposure.
+   */
+  function fetchImageDataUrl(url: string): Promise<string | null> {
+    if (AppConfig.isElectron) {
+      return window.electronIO.ipcRenderer
+        .invoke('fetchUrlBuffer', url, {
+          omitCredentials: true,
+          maxBytes: 15 * 1024 * 1024,
+          timeoutMs: 30000,
+        })
+        .then((res) => {
+          if (res?.error || !res?.data) {
+            return null;
+          }
+          const blob = new Blob([res.data], {
+            type: res.contentType || 'application/octet-stream',
+          });
+          return blobToDataUrl(blob);
+        })
+        .catch(() => null);
+    }
+    if (AppConfig.isCapacitor) {
+      // Build the data URL straight from the native base64 body.
+      return capacitorHttpGet(url)
+        .then(({ base64, contentType }) =>
+          base64 ? `data:${contentType || 'image/*'};base64,${base64}` : null,
+        )
+        .catch(() => null);
+    }
+    return fetch(url, { credentials: 'omit' })
+      .then((r) => r.blob())
+      .then(blobToDataUrl)
+      .catch(() => null);
+  }
+
+  /**
+   * Download an HTML page and save it as cleaned HTML or Markdown (scripts
+   * stripped, images optionally inlined as data URLs, optional article
+   * extraction). Binary URLs should use downloadUrl instead.
+   */
+  function downloadUrlAs(
+    url: string,
+    targetPath: string,
+    format: 'html' | 'markdown',
+    options: {
+      extractArticle?: boolean;
+      embedImages?: boolean;
+      tags?: string;
+    } = {},
+  ): Promise<TS.FileSystemEntry> {
+    const opts: ClipOptions = {
+      sourceUrl: url,
+      fetchImage: fetchImageDataUrl,
+      extractArticle: options.extractArticle,
+      embedImages: options.embedImages,
+      tags: options.tags,
+      scrappedOn: new Date().toISOString(),
+    };
+    return fetchPageHtml(url)
+      .then((html) =>
+        format === 'markdown'
+          ? htmlToMarkdown(html, opts)
+          : htmlToCleanHtml(html, opts),
+      )
+      .then((content) =>
+        saveTextFilePromise({ path: targetPath }, content, true),
+      );
   }
 
   function downloadFsEntry(fsEntry: TS.FileSystemEntry) {
@@ -2689,6 +2859,7 @@ export const IOActionsContextProvider = ({
       copyDirs,
       copyFiles,
       downloadUrl,
+      downloadUrlAs,
       downloadFsEntry,
       uploadFilesAPI,
       uploadFiles,

@@ -184,6 +184,7 @@
     "@milkdown/crepe": "7.21.2",
     "@milkdown/kit": "7.21.2",
     "@milkdown/react": "7.21.2",
+    "@mozilla/readability": "0.6.0",
     "@mui/icons-material": "9.1.0",
     "@mui/lab": "9.0.0-beta.4",
     "@mui/material": "9.1.0",
@@ -244,6 +245,7 @@
     "semver": "7.7.4",
     "swiper": "12.1.3",
     "tga-js": "1.1.1",
+    "turndown": "7.2.4",
     "utif.ts": "3.1.1",
     "zod": "3.25.67",
     "zod-to-json-schema": "3.25.1"
@@ -264,6 +266,7 @@
     "@types/react-redux": "^7.1.24",
     "@types/redux-logger": "^3.0.9",
     "@types/terser-webpack-plugin": "^5.0.4",
+    "@types/turndown": "^5.0.5",
     "@types/webpack-bundle-analyzer": "^4.6.0",
     "@typescript-eslint/eslint-plugin": "^6.7.0",
     "@typescript-eslint/parser": "^6.7.0",

@@ -42,7 +42,7 @@ import {
 } from '-/components/CommonIcons';
 import CustomLogo from '-/components/CustomLogo';
 import HelpFeedbackPanel from '-/components/HelpFeedbackPanel';
-import { ProLabel } from '-/components/HelperComponents';
+import { BetaLabel, ProLabel } from '-/components/HelperComponents';
 import InfoIcon from '-/components/InfoIcon';
 import LocationManager from '-/components/LocationManager';
 import ProTeaser from '-/components/ProTeaser';
@@ -511,25 +511,27 @@ function MobileNavigation(props: Props) {
                       </ListItemIcon>
                       <ListItemText primary={t('core:addFiles')} />
                     </MenuItem>
-                    {AppConfig.isElectron &&
-                      !currentLocation?.haveObjectStoreSupport() && (
-                        <MenuItem
-                          key="newFromDownloadURL"
-                          data-tid="newFromDownloadURLTID"
-                          onClick={() => {
-                            openDownloadUrl();
-                            setOpenCreateMenu(false);
-                            hideDrawer?.();
-                          }}
-                        >
-                          <ListItemIcon>
-                            <DownloadIcon />
-                          </ListItemIcon>
-                          <ListItemText
-                            primary={t('core:newFromDownloadURL')}
-                          />
-                        </MenuItem>
-                      )}
+                    <MenuItem
+                      key="newFromDownloadURL"
+                      data-tid="newFromDownloadURLTID"
+                      onClick={() => {
+                        openDownloadUrl();
+                        setOpenCreateMenu(false);
+                        hideDrawer?.();
+                      }}
+                    >
+                      <ListItemIcon>
+                        <DownloadIcon />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={
+                          <>
+                            {t('core:newFromDownloadURL')}
+                            <BetaLabel />
+                          </>
+                        }
+                      />
+                    </MenuItem>
                     <Divider />
                     <MenuItem
                       key="createNewFolder"
