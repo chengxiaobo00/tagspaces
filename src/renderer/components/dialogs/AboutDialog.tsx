@@ -25,6 +25,7 @@ import TsTooltip from '-/components/TsTooltip';
 import TranslucentDialog from '-/components/dialogs/components/TranslucentDialog';
 import TsDialogActions from '-/components/dialogs/components/TsDialogActions';
 import TsDialogTitle from '-/components/dialogs/components/TsDialogTitle';
+import { BuyProDialogContext } from '-/components/dialogs/hooks/BuyProDialogContextProvider';
 import { useLicenseDialogContext } from '-/components/dialogs/hooks/useLicenseDialogContext';
 import { useThirdPartyLibsDialogContext } from '-/components/dialogs/hooks/useThirdPartyLibsDialogContext';
 import { Pro } from '-/pro';
@@ -37,7 +38,7 @@ import Typography from '@mui/material/Typography';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import Links from 'assets/links';
-import { useState } from 'react';
+import { useContext, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import semver from 'semver';
 
@@ -58,6 +59,14 @@ function AboutDialog(props: Props) {
   const { t } = useTranslation();
   const { openLicenseDialog } = useLicenseDialogContext();
   const { openThirdPartyLibsDialog } = useThirdPartyLibsDialogContext();
+  const { openBuyProDialog } = useContext(BuyProDialogContext);
+
+  // On Capacitor mobile the upgrade CTA opens the in-app StoreKit / Play
+  // Billing sheet (both stores forbid linking out from the purchase flow).
+  // Desktop and web keep the external products page. Mirrors ProTeaserDialog.
+  const onUpgradeClick = AppConfig.isCapacitor
+    ? () => openBuyProDialog?.()
+    : () => openURLExternally(Links.links.productsOverview, true);
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [newVersion, setNewVersion] = useState('');
   const { open, onClose } = props;
@@ -243,11 +252,9 @@ function AboutDialog(props: Props) {
         <span>
           {!Pro && (
             <TsButton
-              data-tid="checkForUpdates"
-              title={t('core:checkForNewVersion')}
-              onClick={() => {
-                openURLExternally(Links.links.productsOverview, true);
-              }}
+              data-tid="upgradeToProButton"
+              title={t('core:upgradeToProButton')}
+              onClick={onUpgradeClick}
               sx={{ marginRight: AppConfig.defaultSpaceBetweenButtons }}
             >
               {t('core:upgradeToProButton')}

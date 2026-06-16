@@ -29,6 +29,7 @@ import {
   getProProduct,
   IAPProduct,
   isIapAvailable,
+  presentCodeRedemption,
   purchasePro,
   restoreProPurchase,
 } from '-/services/iap';
@@ -302,18 +303,35 @@ function BuyProDialog(props: Props) {
             t('core:buyProAction', { price: product?.price ?? '' })
           )}
         </TsButton>
-        <TsButton
-          data-tid="buyProRestoreTID"
-          variant="text"
-          onClick={onRestoreClick}
-          disabled={purchaseInFlight || restoreInFlight}
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 1,
+            justifyContent: 'center',
+            flexWrap: 'wrap',
+          }}
         >
-          {restoreInFlight ? (
-            <CircularProgress size={18} />
-          ) : (
-            t('core:restorePurchases')
-          )}
-        </TsButton>
+          <TsButton
+            data-tid="buyProRestoreTID"
+            variant="text"
+            onClick={onRestoreClick}
+            disabled={purchaseInFlight || restoreInFlight}
+          >
+            {restoreInFlight ? (
+              <CircularProgress size={18} />
+            ) : (
+              t('core:restorePurchases')
+            )}
+          </TsButton>
+          <TsButton
+            data-tid="buyProRedeemTID"
+            variant="text"
+            onClick={() => presentCodeRedemption()}
+            disabled={purchaseInFlight || restoreInFlight}
+          >
+            {t('core:redeemCode')}
+          </TsButton>
+        </Box>
       </DialogActions>
     </Dialog>
   );

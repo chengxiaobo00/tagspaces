@@ -29,6 +29,7 @@ import {
   NewFeatureIcon,
   OnboardingIcon,
   ProTeaserIcon,
+  RestoreIcon,
   TranslationIcon,
   WebClipperIcon,
   XIcon,
@@ -37,7 +38,9 @@ import { useAboutDialogContext } from '-/components/dialogs/hooks/useAboutDialog
 import { useKeyboardDialogContext } from '-/components/dialogs/hooks/useKeyboardDialogContext';
 import { useOnboardingDialogContext } from '-/components/dialogs/hooks/useOnboardingDialogContext';
 import { useProTeaserDialogContext } from '-/components/dialogs/hooks/useProTeaserDialogContext';
+import AppConfig from '-/AppConfig';
 import { Pro } from '-/pro';
+import { restoreProPurchase } from '-/services/iap';
 import { AppDispatch } from '-/reducers/app';
 import {
   actions as SettingsActions,
@@ -220,19 +223,34 @@ function HelpFeedbackPanel(props: Props) {
             <ListItemText>{t('core:emailContact')}</ListItemText>
           </ListItemButton>
         </ListItem>
-        {Pro && (
+        {AppConfig.isCapacitor ? (
+          // Mobile Pro is a one-time non-consumable IAP — there is no
+          // subscription to cancel. Offer Restore Purchases instead, gated
+          // on the platform (not on Pro) so a reinstalled user can restore
+          // before the entitlement has been re-applied.
           <ListItem disablePadding>
-            <ListItemButton
-              onClick={() =>
-                openURLExternally(Links.links.cancelSubscription, true)
-              }
-            >
+            <ListItemButton onClick={() => restoreProPurchase()}>
               <ListItemIcon>
-                <CancelSubscriptionIcon />
+                <RestoreIcon />
               </ListItemIcon>
-              <ListItemText>{t('core:cancelSubscription')}</ListItemText>
+              <ListItemText>{t('core:restorePurchases')}</ListItemText>
             </ListItemButton>
           </ListItem>
+        ) : (
+          Pro && (
+            <ListItem disablePadding>
+              <ListItemButton
+                onClick={() =>
+                  openURLExternally(Links.links.cancelSubscription, true)
+                }
+              >
+                <ListItemIcon>
+                  <CancelSubscriptionIcon />
+                </ListItemIcon>
+                <ListItemText>{t('core:cancelSubscription')}</ListItemText>
+              </ListItemButton>
+            </ListItem>
+          )
         )}
         <ListItem disablePadding>
           <ListItemButton

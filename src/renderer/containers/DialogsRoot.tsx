@@ -73,17 +73,17 @@ const providers = [
   OnboardingDialogContextProvider,
   LicenseDialogContextProvider,
   ThirdPartyLibsDialogContextProvider,
+  // BuyProDialogContextProvider must wrap every dialog whose CTA opens the
+  // Buy Pro sheet on Capacitor — currently AboutDialog ("Upgrade to Pro")
+  // and ProTeaserDialog ("Upgrade"). Each of those dialogs renders as a
+  // sibling of {children}, and reduceRight makes earlier array entries the
+  // outer (ancestor) providers, so BuyProDialogContextProvider must be
+  // listed BEFORE all of them or useContext(BuyProDialogContext) resolves to
+  // the default (undefined) and the CTA silently no-ops.
+  BuyProDialogContextProvider,
   AboutDialogContextProvider,
   KeyboardDialogContextProvider,
   LinkDialogContextProvider,
-  // BuyProDialogContextProvider must wrap ProTeaserDialogContextProvider so
-  // the "Compare and Upgrade" CTA inside ProTeaserDialog can call
-  // openBuyProDialog() on Capacitor mobile (replaces the external URL link
-  // — both stores forbid linking out from the actual purchase flow).
-  // It must be listed BEFORE ProTeaserDialogContextProvider: reduceRight
-  // makes earlier entries the outer (ancestor) providers, and ProTeaserDialog
-  // renders as a sibling of {children}, so it only sees providers above it.
-  BuyProDialogContextProvider,
   ProTeaserDialogContextProvider,
   AiGenerationDialogContextProvider,
   ResolveConflictContextProvider,

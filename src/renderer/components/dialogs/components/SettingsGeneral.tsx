@@ -70,7 +70,6 @@ import {
 } from '-/services/secure-crypto';
 import { isAnotherTabOpen } from '-/services/credentialsTabGuard';
 import CredentialsPasswordSetupDialog from '-/components/dialogs/CredentialsPasswordSetupDialog';
-import { presentCodeRedemption, restoreProPurchase } from '-/services/iap';
 import { isWorkerAvailable, setLanguage } from '-/services/utils-io';
 import { TS } from '-/tagspaces.namespace';
 import { clearAllURLParams } from '-/utils/dom';
@@ -1801,39 +1800,6 @@ function SettingsGeneral() {
                   {t('core:reloadApplication')}
                 </TsButton>
               )}
-            </ListItem>
-          ),
-        },
-        // Capacitor-only: in-app purchase management. Apple App Review
-        // requires a visible "Restore Purchases" entry for any app that
-        // ships IAP. Redeem Code surfaces promo codes (Apple offer codes
-        // / Play promo codes) so users who got a free Pro code via a
-        // desktop bundle have a clear way to apply it.
-        AppConfig.isCapacitor && {
-          label: t('core:restorePurchases'),
-          jsx: (
-            <ListItem>
-              <ListItemText primary={t('core:restorePurchases')} />
-              <TsButton
-                data-tid="settingsRestoreProTID"
-                onClick={() => restoreProPurchase()}
-              >
-                {t('core:restorePurchases')}
-              </TsButton>
-            </ListItem>
-          ),
-        },
-        AppConfig.isCapacitor && {
-          label: t('core:redeemCode'),
-          jsx: (
-            <ListItem>
-              <ListItemText primary={t('core:redeemCode')} />
-              <TsButton
-                data-tid="settingsRedeemCodeTID"
-                onClick={() => presentCodeRedemption()}
-              >
-                {t('core:redeemCode')}
-              </TsButton>
             </ListItem>
           ),
         },
