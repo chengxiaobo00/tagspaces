@@ -346,9 +346,30 @@ test.describe('TST08 - File folder properties', () => {
     await clickOn('[data-tid=deleteEntryTID]');
     await clickOn('[data-tid=confirmDeleteTID]');
     await expectElementExist(getGridFileSelector(fileName), false, 5000);
+    // Deleting the opened entry must also close its viewer/editor.
+    await expectElementExist(
+      '[data-tid=OpenedTID' + dataTidFormat(fileName) + ']',
+      false,
+      5000,
+    );
 
     await expectMetaFilesExist(arrayMeta, false);
     await setSettings('[data-tid=settingsSetPersistTagsInFileName]', true);
+  });
+
+  test('TST0813b - Delete file opened in viewer closes it [web,s3,electron]', async () => {
+    const fileName = 'sample.txt';
+    // Open in the actual file viewer (not the properties panel).
+    await openFile(fileName);
+    await clickOn('[data-tid=propsActionsMenuTID]');
+    await clickOn('[data-tid=deleteEntryTID]');
+    await clickOn('[data-tid=confirmDeleteTID]');
+    await expectElementExist(getGridFileSelector(fileName), false, 5000);
+    await expectElementExist(
+      '[data-tid=OpenedTID' + dataTidFormat(fileName) + ']',
+      false,
+      5000,
+    );
   });
 
   test('TST0813a - Delete file and check revisions deleted [web,s3,electron,_pro]', async () => {

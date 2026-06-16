@@ -53,6 +53,7 @@ import {
   locationType,
 } from '@tagspaces/tagspaces-common/misc';
 import {
+  cleanFrontDirSeparator,
   cleanRootPath,
   cleanTrailingDirSeparator,
   extractContainingDirectoryPath,
@@ -238,11 +239,26 @@ export const OpenedEntryContextProvider = ({
             openFsEntry(action.entry);
           }
         } else if (action.action === 'delete') {
-          if (
-            currentEntry.current &&
-            currentEntry.current.path.startsWith(action.entry.path)
-          ) {
-            actuallyCloseFiles();
+          // Close the viewer/editor when the opened entry itself is deleted, or
+          // when a deleted folder contains it. Normalize both paths first:
+          // a raw `startsWith` breaks when the opened entry's path and the
+          // deleted entry's path differ by a leading/trailing separator (S3
+          // locations, entries opened via links/search) and also matches
+          // siblings by accident (e.g. '/a/bc.txt'.startsWith('/a/b')). See the
+          // path-handling notes in CLAUDE.md.
+          if (currentEntry.current && action.entry?.path !== undefined) {
+            const normPath = (p: string) =>
+              cleanTrailingDirSeparator(
+                cleanFrontDirSeparator(p).replaceAll('\\', '/'),
+              );
+            const openedNorm = normPath(currentEntry.current.path);
+            const deletedNorm = normPath(action.entry.path);
+            if (
+              openedNorm === deletedNorm ||
+              openedNorm.startsWith(deletedNorm + '/')
+            ) {
+              actuallyCloseFiles();
+            }
           }
         } else if (action.action === 'update' || action.action === 'move') {
           if (
