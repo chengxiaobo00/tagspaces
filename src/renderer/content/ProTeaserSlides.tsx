@@ -19,7 +19,6 @@
 import AiToolsImage from '-/assets/images/ai-tools.jpg';
 import CalendarImage from '-/assets/images/calendar-perspective.avif';
 import CustomFolderColor from '-/assets/images/custom-folder-color.jpg';
-import EntryDescription from '-/assets/images/entry-description.jpg';
 import FolderVizImage from '-/assets/images/folderviz-perspective.jpg';
 import GalleryImage from '-/assets/images/gallery-perspective.jpg';
 import KanbanImage from '-/assets/images/kanban-perspective.jpg';
@@ -148,22 +147,6 @@ export function getProTeaserSlides(t) {
     pictureHeight: 300,
   };
   slidesEN[slidesNames[7]] = {
-    title: t('peri:ptsAnnotateLinkTitle'),
-    description: t('peri:ptsAnnotateLink'),
-    items: [
-      <>{t('peri:ptsAnnotateLinkSection1')}</>,
-      <>{t('peri:ptsAnnotateLinkSection2')}</>,
-      <>{t('peri:ptsAnnotateLinkSection3')}</>,
-      <>{t('peri:ptsAnnotateLinkSection4')}</>,
-      <>{t('peri:ptsAnnotateLinkSection5')}</>,
-    ],
-    ctaURL: Links.links.productProFileFolderMeta,
-    ctaTitle: t('showMeMore'),
-    pictureURL: EntryDescription,
-    pictureShadow: true,
-    pictureHeight: 300,
-  };
-  slidesEN[slidesNames[8]] = {
     title: t('peri:ptsRevisionsTitle'),
     description: (
       <>
@@ -177,7 +160,7 @@ export function getProTeaserSlides(t) {
     pictureShadow: true,
     pictureHeight: 400,
   };
-  slidesEN[slidesNames[9]] = {
+  slidesEN[slidesNames[8]] = {
     title: t('peri:ptsCustomBackgroundTitle'),
     description: t('peri:ptsCustomBackground'),
     ctaURL: Links.links.productProFolderColor,
@@ -186,7 +169,7 @@ export function getProTeaserSlides(t) {
     pictureShadow: true,
     pictureHeight: 300,
   };
-  slidesEN[slidesNames[10]] = {
+  slidesEN[slidesNames[9]] = {
     title: 'TagSpaces Pro Web',
     description: t('peri:ptsProWeb'),
     items: [

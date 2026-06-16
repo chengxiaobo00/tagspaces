@@ -577,10 +577,14 @@ export const IOActionsContextProvider = ({
   }
 
   function deleteFile(filePath: string, uuid: string) {
+    const fileName = extractFileName(
+      filePath,
+      currentLocation?.getDirSeparator(),
+    );
     return deleteEntriesPromise(currentLocation.toFsEntry(filePath, true))
       .then(() => {
         showNotification(
-          `Deleting file ${filePath} successful.`,
+          `Deleting file ${fileName} successful.`,
           'default',
           true,
         );
@@ -589,7 +593,7 @@ export const IOActionsContextProvider = ({
       .catch((error) => {
         console.log('Error while deleting file: ' + error);
         showNotification(
-          `Error while deleting file ${filePath}`,
+          `Error while deleting file ${fileName}`,
           'error',
           true,
         );

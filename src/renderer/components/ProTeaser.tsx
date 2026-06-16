@@ -28,7 +28,6 @@ import AccountTreeTwoToneIcon from '@mui/icons-material/AccountTreeTwoTone';
 import AutoAwesomeTwoToneIcon from '@mui/icons-material/AutoAwesomeTwoTone';
 import CalendarMonthTwoToneIcon from '@mui/icons-material/CalendarMonthTwoTone';
 import CameraTwoToneIcon from '@mui/icons-material/CameraTwoTone';
-import DescriptionTwoToneIcon from '@mui/icons-material/DescriptionTwoTone';
 import FolderTwoToneIcon from '@mui/icons-material/FolderTwoTone';
 import HistoryTwoToneIcon from '@mui/icons-material/HistoryTwoTone';
 import MapTwoToneIcon from '@mui/icons-material/MapTwoTone';
@@ -102,16 +101,9 @@ const proAds: ProAd[] = [
     subtextKey: 'peri:proTeaserAiSubtext',
   },
   {
-    slideId: 'annotation',
-    Icon: DescriptionTwoToneIcon,
-    color: '#0288d1',
-    headlineKey: 'peri:proTeaserAnnotationHeadline',
-    subtextKey: 'peri:proTeaserAnnotationSubtext',
-  },
-  {
     slideId: 'revisions',
     Icon: HistoryTwoToneIcon,
-    color: '#795548',
+    color: '#0288d1',
     headlineKey: 'peri:proTeaserRevisionsHeadline',
     subtextKey: 'peri:proTeaserRevisionsSubtext',
   },

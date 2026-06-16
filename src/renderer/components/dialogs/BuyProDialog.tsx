@@ -33,6 +33,11 @@ import {
   restoreProPurchase,
 } from '-/services/iap';
 import { openURLExternally } from '-/services/utils-io';
+import AutoAwesomeTwoToneIcon from '@mui/icons-material/AutoAwesomeTwoTone';
+import FolderTwoToneIcon from '@mui/icons-material/FolderTwoTone';
+import HistoryTwoToneIcon from '@mui/icons-material/HistoryTwoTone';
+import ViewKanbanTwoToneIcon from '@mui/icons-material/ViewKanbanTwoTone';
+import WorkspacePremiumRoundedIcon from '@mui/icons-material/WorkspacePremiumRounded';
 import {
   Alert,
   Box,
@@ -44,10 +49,10 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
+import { alpha, useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import Links from 'assets/links';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 interface Props {
@@ -145,44 +150,95 @@ function BuyProDialog(props: Props) {
     product?.price ||
     (loadingProduct ? t('core:loading') : t('core:priceUnavailable'));
 
+  const buyDisabled =
+    purchaseInFlight || restoreInFlight || loadingProduct || !product;
+
+  const proFeatures = [
+    { Icon: ViewKanbanTwoToneIcon, label: t('core:buyProFeaturePerspectives') },
+    { Icon: AutoAwesomeTwoToneIcon, label: t('core:buyProFeatureAI') },
+    { Icon: HistoryTwoToneIcon, label: t('core:buyProFeatureRevisions') },
+    { Icon: FolderTwoToneIcon, label: t('core:buyProFeatureFolderColor') },
+  ];
+
   return (
     <Dialog
       open={open}
       onClose={purchaseInFlight ? undefined : onClose}
       fullScreen={smallScreen}
+      fullWidth
+      maxWidth="xs"
       keepMounted
       scroll="paper"
       aria-labelledby="buy-pro-dialog-title"
     >
       <TsDialogTitle
-        dialogTitle={t('core:tagSpacesPro')}
+        dialogTitle={''}
         closeButtonTestId="closeBuyProDialogTID"
         onClose={purchaseInFlight ? undefined : onClose}
       />
-      <DialogContent>
-        <Stack spacing={2} sx={{ paddingTop: 1 }}>
-          <Typography variant="body1">{t('core:buyProSubtitle')}</Typography>
-
+      <DialogContent sx={{ paddingTop: 0 }}>
+        <Stack spacing={2.5}>
+          {/* Hero header with Pro branding */}
           <Box
             sx={{
-              borderRadius: AppConfig.defaultCSSRadius + 'px',
-              border: '1px solid',
-              borderColor: 'divider',
-              padding: 2,
+              background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+              color: theme.palette.primary.contrastText,
+              borderRadius: AppConfig.defaultCSSRadius,
+              padding: 3,
+              textAlign: 'center',
             }}
           >
-            <Typography variant="body2">
-              {t('core:buyProFeaturesList')}
+            <Box
+              sx={{
+                width: 64,
+                height: 64,
+                borderRadius: '50%',
+                backgroundColor: 'rgba(255, 255, 255, 0.18)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 12px',
+              }}
+            >
+              <WorkspacePremiumRoundedIcon sx={{ fontSize: 38 }} />
+            </Box>
+            <Typography variant="h5" sx={{ fontWeight: 700 }}>
+              {t('core:tagSpacesPro')}
+            </Typography>
+            <Typography variant="body2" sx={{ opacity: 0.9, marginTop: 0.5 }}>
+              {t('core:buyProSubtitle')}
             </Typography>
           </Box>
 
+          {/* Feature checklist */}
+          <Stack spacing={1.5} sx={{ paddingX: 0.5 }}>
+            {proFeatures.map((feature, index) => (
+              <Box
+                key={index}
+                sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}
+              >
+                <feature.Icon
+                  sx={{ color: 'primary.main', fontSize: 26, flexShrink: 0 }}
+                />
+                <Typography variant="body2">{feature.label}</Typography>
+              </Box>
+            ))}
+          </Stack>
+
+          {/* Price emphasis */}
           <Box
             sx={{
               textAlign: 'center',
-              paddingTop: 1,
+              padding: 2,
+              borderRadius: AppConfig.defaultCSSRadius,
+              backgroundColor: alpha(theme.palette.primary.main, 0.08),
             }}
           >
-            <Typography variant="h4" data-tid="buyProPriceTID">
+            <Typography
+              variant="h4"
+              data-tid="buyProPriceTID"
+              sx={{ fontWeight: 700 }}
+            >
               {priceLine}
             </Typography>
             <Typography variant="caption" color="text.secondary">
@@ -219,8 +275,6 @@ function BuyProDialog(props: Props) {
           paddingRight: 'max(16px, env(safe-area-inset-right))',
           paddingTop: 1,
           paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
-          borderTop: '1px solid',
-          borderColor: 'divider',
           gap: 1,
           flexDirection: 'column',
           alignItems: 'stretch',
@@ -230,13 +284,20 @@ function BuyProDialog(props: Props) {
           data-tid="buyProConfirmTID"
           variant="contained"
           onClick={onBuyClick}
-          disabled={
-            purchaseInFlight || restoreInFlight || loadingProduct || !product
-          }
-          sx={{ minHeight: 48 }}
+          disabled={buyDisabled}
+          sx={{
+            minHeight: 52,
+            fontWeight: 600,
+            fontSize: '15px',
+            ...(buyDisabled
+              ? {}
+              : {
+                  background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+                }),
+          }}
         >
           {purchaseInFlight ? (
-            <CircularProgress size={20} />
+            <CircularProgress size={20} color="inherit" />
           ) : (
             t('core:buyProAction', { price: product?.price ?? '' })
           )}

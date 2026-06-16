@@ -154,12 +154,13 @@ function Slide(props: SlideProps) {
         <br />
         <Box sx={{ whiteSpace: 'nowrap' }}>
           <ButtonGroup>
-            <TsButton variant="contained" onClick={onUpgradeClick}>
-              {t('core:compareAndUpgrade')}
+            <TsButton onClick={onUpgradeClick}>
+              {AppConfig.isCapacitor
+                ? t('core:upgrade')
+                : t('core:compareAndUpgrade')}
             </TsButton>
             {ctaTitle && (
               <TsButton
-                variant="contained"
                 onClick={onCtaClick}
                 sx={{ marginLeft: AppConfig.defaultSpaceBetweenButtons }}
               >
