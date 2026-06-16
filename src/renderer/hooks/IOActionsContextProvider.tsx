@@ -1089,11 +1089,17 @@ export const IOActionsContextProvider = ({
       });
   }
 
-  /** Fetch a page's HTML, bypassing CORS/CSP via the main process on Electron. */
+  /**
+   * Fetch a page's HTML, bypassing CORS/CSP via the main process on Electron.
+   * Capped in size/time: the page is untrusted and fetched whole into memory.
+   */
   function fetchPageHtml(url: string): Promise<string> {
     if (AppConfig.isElectron) {
       return window.electronIO.ipcRenderer
-        .invoke('fetchUrlBuffer', url)
+        .invoke('fetchUrlBuffer', url, {
+          maxBytes: 50 * 1024 * 1024,
+          timeoutMs: 60000,
+        })
         .then((res) => {
           if (res?.error) {
             throw new Error(res.error);
