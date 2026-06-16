@@ -52,6 +52,7 @@ import {
   ClipOptions,
   htmlToCleanHtml,
   htmlToMarkdown,
+  isHtmlReaderable,
 } from '-/services/web-content';
 import { TS } from '-/tagspaces.namespace';
 import { CommonLocation } from '-/utils/CommonLocation';
@@ -139,8 +140,10 @@ type IOActionsContextData = {
       extractArticle?: boolean;
       embedImages?: boolean;
       tags?: string;
+      stripStyles?: boolean;
     },
   ) => Promise<TS.FileSystemEntry>;
+  getUrlReaderable: (url: string) => Promise<boolean>;
   downloadFsEntry: (fsEntry: TS.FileSystemEntry) => void;
   uploadFilesAPI: (
     files: Array<any>,
@@ -275,6 +278,7 @@ export const IOActionsContext = createContext<IOActionsContextData>({
   copyFiles: undefined,
   downloadUrl: undefined,
   downloadUrlAs: undefined,
+  getUrlReaderable: undefined,
   downloadFsEntry: undefined,
   uploadFilesAPI: undefined,
   uploadMeta: undefined,
@@ -1169,6 +1173,7 @@ export const IOActionsContextProvider = ({
       extractArticle?: boolean;
       embedImages?: boolean;
       tags?: string;
+      stripStyles?: boolean;
     } = {},
   ): Promise<TS.FileSystemEntry> {
     const opts: ClipOptions = {
@@ -1177,6 +1182,7 @@ export const IOActionsContextProvider = ({
       extractArticle: options.extractArticle,
       embedImages: options.embedImages,
       tags: options.tags,
+      stripStyles: options.stripStyles,
       scrappedOn: new Date().toISOString(),
     };
     return fetchPageHtml(url)
@@ -1188,6 +1194,13 @@ export const IOActionsContextProvider = ({
       .then((content) =>
         saveTextFilePromise({ path: targetPath }, content, true),
       );
+  }
+
+  /** Fetch a page and report whether Readability treats it as a parseable article. */
+  function getUrlReaderable(url: string): Promise<boolean> {
+    return fetchPageHtml(url)
+      .then((html) => isHtmlReaderable(html))
+      .catch(() => false);
   }
 
   function downloadFsEntry(fsEntry: TS.FileSystemEntry) {
@@ -2860,6 +2873,7 @@ export const IOActionsContextProvider = ({
       copyFiles,
       downloadUrl,
       downloadUrlAs,
+      getUrlReaderable,
       downloadFsEntry,
       uploadFilesAPI,
       uploadFiles,

@@ -23,7 +23,10 @@ import React, {
   useReducer,
   useState,
 } from 'react';
-import { extractTagsAsObjects } from '@tagspaces/tagspaces-common/paths';
+import {
+  extractTagsAsObjects,
+  isMeta,
+} from '@tagspaces/tagspaces-common/paths';
 import { TS } from '-/tagspaces.namespace';
 import AppConfig from '-/AppConfig';
 import { useSelector } from 'react-redux';
@@ -77,7 +80,24 @@ export const EditedEntryContextProvider = ({
         setActions(undefined);
         return;
       }
-      const actionsArray: TS.EditAction[] = entries.map((entry) => ({
+      // Internal .ts sidecar/thumbnail/revision files are never shown in any
+      // view, so no consumer acts on their delete actions. Emitting them is
+      // not only useless — it's harmful: deleteFile()/deleteEntries() reflect
+      // the real file first and then reflect this meta cleanup. When the two
+      // setActions() calls aren't separated by a macrotask (Capacitor resolves
+      // a non-existent-file delete via a microtask, unlike Electron's IPC),
+      // React 18 batches them and the meta-only update clobbers the real
+      // file-delete — leaving the grid and the opened viewer stale until a
+      // manual reload. Drop meta entries; if nothing user-visible remains,
+      // don't touch `actions` at all (an empty/undefined update would clobber
+      // the preceding real delete just the same).
+      const visibleEntries = entries.filter(
+        (entry) => entry && !isMeta(entry.path),
+      );
+      if (visibleEntries.length === 0) {
+        return;
+      }
+      const actionsArray: TS.EditAction[] = visibleEntries.map((entry) => ({
         action: 'delete',
         entry,
       }));

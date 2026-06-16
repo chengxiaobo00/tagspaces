@@ -130,6 +130,13 @@ function extForFormat(format: SaveFormat, originalExt: string): string {
   return originalExt || '.html';
 }
 
+// Whether a (lower-cased) extension is an HTML document — these get sanitized
+// (script/link stripped) even in "Original" mode; everything else (images, PDF,
+// archives, …) is downloaded raw.
+function isHtmlExtension(ext: string): boolean {
+  return ['.html', '.htm', '.xhtml', ''].includes(ext.toLowerCase());
+}
+
 function DownloadUrlDialog(props: Props) {
   const { open, onClose } = props;
   const { t } = useTranslation();
@@ -137,7 +144,8 @@ function DownloadUrlDialog(props: Props) {
   const smallScreen = useMediaQuery(theme.breakpoints.down('md'));
   const { setReflectActions } = useEditedEntryContext();
   const { currentLocation } = useCurrentLocationContext();
-  const { downloadUrl, downloadUrlAs } = useIOActionsContext();
+  const { downloadUrl, downloadUrlAs, getUrlReaderable } =
+    useIOActionsContext();
   const { showNotification } = useNotificationContext();
   const { openFileUploadDialog } = useFileUploadDialogContext();
   const dispatch: AppDispatch = useDispatch();
@@ -188,6 +196,36 @@ function DownloadUrlDialog(props: Props) {
     // Reset only on open/close; default tag colors are read at seed time.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
+
+  // When a conversion format is selected, default the "Extract main article"
+  // switch to checked only if Readability considers the page a parseable
+  // article. Fetches the page (debounced) and caches the verdict per URL.
+  const readableCache = useRef<{ url: string; promise: Promise<boolean> }>();
+  useEffect(() => {
+    if (!open || saveFormat === 'original' || !/^https?:\/\//i.test(url)) {
+      return undefined;
+    }
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      if (!readableCache.current || readableCache.current.url !== url) {
+        readableCache.current = { url, promise: getUrlReaderable(url) };
+      }
+      readableCache.current.promise
+        .then((readerable) => {
+          if (!cancelled) {
+            setExtractArticle(readerable);
+          }
+          return readerable;
+        })
+        .catch(() => {});
+    }, 500);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+    // getUrlReaderable is a stable context fn.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [url, saveFormat, open]);
 
   const onUploadProgress = (progress, abort, fileName2) => {
     dispatch(AppActions.onUploadProgress(progress, abort, fileName2));
@@ -297,28 +335,50 @@ function DownloadUrlDialog(props: Props) {
       );
     };
 
-    if (canConvert && saveFormat !== 'original') {
-      // Cleaned-HTML / Markdown clip: fetch the page, strip scripts, inline
-      // images and optionally extract the article, then save into the location.
-      downloadUrlAs(url, targetPath, saveFormat, {
+    const tagsCsv = tagTitles.join(', ');
+    const isHtml = isHtmlExtension(splitNameExt(fileName).ext);
+
+    if (!canConvert) {
+      // Web app: browser CSP/CORS cannot be bypassed — fall back to a plain
+      // browser download (the menu entry is hidden on web anyway).
+      saveAs(url, finalName);
+    } else if (saveFormat === 'markdown') {
+      // Convert the page to Markdown.
+      downloadUrlAs(url, targetPath, 'markdown', {
         extractArticle,
         embedImages,
-        tags: tagTitles.join(', '),
+        tags: tagsCsv,
       })
         .then(reflectOpen)
         .catch(notifyError);
-    } else if (AppConfig.isElectron || AppConfig.isNativeMobile) {
-      // Raw download straight into the location (local + cloud + mobile),
-      // routed through the platform's CORS/CSP-free fetch.
+    } else if (saveFormat === 'html') {
+      // Cleaned HTML: strip scripts, links AND styles/CSS.
+      downloadUrlAs(url, targetPath, 'html', {
+        stripStyles: true,
+        extractArticle,
+        embedImages,
+        tags: tagsCsv,
+      })
+        .then(reflectOpen)
+        .catch(notifyError);
+    } else if (isHtml) {
+      // Original HTML: keep the page intact but strip <script> and <link>.
+      downloadUrlAs(url, targetPath, 'html', {
+        stripStyles: false,
+        extractArticle: false,
+        embedImages: false,
+        tags: tagsCsv,
+      })
+        .then(reflectOpen)
+        .catch(notifyError);
+    } else {
+      // Original non-HTML (image, PDF, archive, …): raw binary download via the
+      // platform's CORS/CSP-free fetch, streamed straight into the location.
       dispatch(AppActions.resetProgress());
       openFileUploadDialog();
       downloadUrl(url, targetPath, onUploadProgress)
         .then(reflectOpen)
         .catch(notifyError);
-    } else {
-      // Web app: browser CSP/CORS cannot be bypassed — fall back to a plain
-      // browser download.
-      saveAs(url, finalName);
     }
     onClose();
   }

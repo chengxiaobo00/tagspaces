@@ -43,6 +43,8 @@ export interface ClipOptions {
   tags?: string;
   /** ISO timestamp stamped into metadata (injected so the package stays pure). */
   scrappedOn?: string;
+  /** Also remove `<style>` tags and inline `style=` attributes (full clean). */
+  stripStyles?: boolean;
 }
 
 type ImageTask = () => Promise<void>;
@@ -273,10 +275,22 @@ async function inlineImagesInMarkdown(
 // Core sanitize / extract pipeline
 // ---------------------------------------------------------------------------
 
+/** True when Readability considers the page a parseable article. */
+export function isHtmlReaderable(html: string): boolean {
+  try {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    return isProbablyReaderable(doc);
+  } catch (e) {
+    return false;
+  }
+}
+
 /**
  * Parse raw HTML, optionally reduce it to the Readability article, and sanitize
- * it (DOMPurify strips `<script>` and inline event handlers). Returns a fresh
- * sanitized Document.
+ * it. DOMPurify strips `<script>` and inline event handlers by default; we also
+ * always drop `<link>` (external stylesheets/resources), and — when
+ * `stripStyles` is set — `<style>` tags and inline `style=` attributes too.
+ * Returns a fresh sanitized Document.
  */
 function buildCleanDoc(html: string, opts: ClipOptions): Document {
   const parser = new DOMParser();
@@ -302,7 +316,18 @@ function buildCleanDoc(html: string, opts: ClipOptions): Document {
     }
   }
 
-  const clean = DOMPurify.sanitize(workingHtml, { WHOLE_DOCUMENT: true });
+  // DOMPurify drops <script> + event handlers by default; we always also drop
+  // <link>, and for a full clean <style> tags + inline style attributes.
+  const clean = opts.stripStyles
+    ? DOMPurify.sanitize(workingHtml, {
+        WHOLE_DOCUMENT: true,
+        FORBID_TAGS: ['script', 'link', 'style'],
+        FORBID_ATTR: ['style'],
+      })
+    : DOMPurify.sanitize(workingHtml, {
+        WHOLE_DOCUMENT: true,
+        FORBID_TAGS: ['script', 'link'],
+      });
   return parser.parseFromString(clean, 'text/html');
 }
 

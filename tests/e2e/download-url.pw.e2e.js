@@ -29,7 +29,11 @@ import { clearDataStorage, closeWelcomePlaywright } from './welcome.helpers';
 const SAMPLE_TXT = 'TagSpaces download URL test content';
 const PAGE_HTML = `<!DOCTYPE html>
 <html>
-  <head><title>Clip Test Page</title></head>
+  <head>
+    <title>Clip Test Page</title>
+    <link rel="stylesheet" href="/style.css" />
+    <style>body { color: rebeccapurple; }</style>
+  </head>
   <body>
     <h1>Hello Heading</h1>
     <p>Some paragraph text for clipping.</p>
@@ -47,6 +51,13 @@ async function expectEntryStartingWith(base, timeout = 20000) {
     state: 'visible',
     timeout,
   });
+}
+
+// Read the saved page[…].html back from disk (local locations only).
+function readSavedPageHtml(dir) {
+  const file = fs.readdirSync(dir).find((name) => /^page.*\.html$/.test(name));
+  expect(file).toBeTruthy();
+  return fs.readFileSync(path.join(dir, file), 'utf8');
 }
 
 async function openDownloadUrlDialog() {
@@ -157,5 +168,43 @@ test.describe('TST54 - Download from URL', () => {
       expect(md).not.toContain('should-be-stripped');
       expect(md).not.toContain('<script');
     }
+  });
+
+  test('TST5422 - Original HTML strips script + link, keeps styles [electron]', async ({
+    testDataDir,
+  }) => {
+    await openDownloadUrlDialog();
+    await setInputValue('[data-tid=newUrlTID] input', baseUrl + '/page.html');
+    // Default "Original file" format → light sanitize for HTML pages.
+    await clickOn('[data-tid=downloadFileUrlTID]');
+    await expectEntryStartingWith('page');
+
+    const html = readSavedPageHtml(testDataDir);
+    expect(html).toContain('Hello Heading');
+    // script + link removed…
+    expect(html).not.toContain('<script');
+    expect(html).not.toContain('should-be-stripped');
+    expect(html).not.toContain('<link');
+    // …but styles are kept in "Original" mode.
+    expect(html).toContain('<style');
+    expect(html).toContain('rebeccapurple');
+  });
+
+  test('TST5423 - Cleaned HTML also strips styles/CSS [electron]', async ({
+    testDataDir,
+  }) => {
+    await openDownloadUrlDialog();
+    await setInputValue('[data-tid=newUrlTID] input', baseUrl + '/page.html');
+    await clickOn('[data-tid=downloadFormatHtmlTID]');
+    await clickOn('[data-tid=downloadFileUrlTID]');
+    await expectEntryStartingWith('page');
+
+    const html = readSavedPageHtml(testDataDir);
+    expect(html).toContain('Hello Heading');
+    expect(html).not.toContain('<script');
+    expect(html).not.toContain('<link');
+    // cleaned strips <style> tags + inline CSS too.
+    expect(html).not.toContain('<style');
+    expect(html).not.toContain('rebeccapurple');
   });
 });
