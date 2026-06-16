@@ -33,6 +33,7 @@ import { NewAudioDialogContextProvider } from '-/components/dialogs/hooks/NewAud
 import { NewFileDialogContextProvider } from '-/components/dialogs/hooks/NewFileDialogContextProvider';
 import { OnboardingDialogContextProvider } from '-/components/dialogs/hooks/OnboardingDialogContextProvider';
 import { PerspectiveOnboardingContextProvider } from '-/components/dialogs/hooks/PerspectiveOnboardingContextProvider';
+import { BuyProDialogContextProvider } from '-/components/dialogs/hooks/BuyProDialogContextProvider';
 import { ProTeaserDialogContextProvider } from '-/components/dialogs/hooks/ProTeaserDialogContextProvider';
 import { ProgressDialogContextProvider } from '-/components/dialogs/hooks/ProgressDialogContextProvider';
 import { ResolveConflictContextProvider } from '-/components/dialogs/hooks/ResolveConflictContextProvider';
@@ -76,6 +77,11 @@ const providers = [
   KeyboardDialogContextProvider,
   LinkDialogContextProvider,
   ProTeaserDialogContextProvider,
+  // BuyProDialogContextProvider must wrap ProTeaserDialogContextProvider so
+  // the "Compare and Upgrade" CTA inside ProTeaserDialog can call
+  // openBuyProDialog() on Capacitor mobile (replaces the external URL link
+  // — both stores forbid linking out from the actual purchase flow).
+  BuyProDialogContextProvider,
   AiGenerationDialogContextProvider,
   ResolveConflictContextProvider,
   DownloadUrlContextProvider,

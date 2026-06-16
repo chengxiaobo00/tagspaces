@@ -48,7 +48,7 @@ const Links = {
     suggestFeature: 'https://tagspaces.discourse.group/c/feature-requests/6',
     forumsUrl: 'https://tagspaces.discourse.group',
     reportIssue: 'https://github.com/tagspaces/tagspaces/issues/',
-    helpTranslating: 'https://www.transifex.com/tagspaces/tagspaces/',
+    helpTranslating: 'https://explore.transifex.com/tagspaces/tagspaces/',
     webClipperChrome:
       'https://chrome.google.com/webstore/detail/tagspaces-web-clipper/ldalmgifdlgpiiadeccbcjojljeanhjk',
     webClipperFirefox:

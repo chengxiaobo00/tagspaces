@@ -1149,5 +1149,18 @@
   "coreExtensionsTooltip": "These are extensions which are packaged with the current version of the app",
   "globalShortcutsTooltip": "Enables global shortcut for creating new files, file navigation, play/pause audio files or opening the search. Global shortcuts are working even if the app window is not currently in focus or visible.",
   "devModeTooltip": "Will enable some experimental features and turn on extra debugging",
+  "tagSpacesPro": "TagSpaces Pro",
+  "buyProSubtitle": "Unlock TagSpaces Pro on this device — one-time purchase, yours forever.",
+  "buyProFeaturesList": "Includes Kanban, Calendar, Mapique and FolderViz perspectives, annotations, AI chat, and more.",
+  "buyProAction": "Buy TagSpaces Pro for {{price}}",
+  "restorePurchases": "Restore Purchases",
+  "redeemCode": "Redeem code",
+  "oneTimePurchase": "One-time purchase",
+  "familySharingNote": "Family Sharing supported on iOS — your purchase extends to family members.",
+  "purchaseCompleteReloading": "Purchase complete. Restarting…",
+  "purchaseFailed": "Purchase could not be completed.",
+  "restoreCompleteReloading": "Purchase restored. Restarting…",
+  "noPurchaseFoundToRestore": "No previous purchase found on this account.",
+  "priceUnavailable": "Price unavailable",
   "-": "-"
 }

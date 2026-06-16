@@ -155,7 +155,7 @@ We welcome contributions! Please review and sign the [Contributor License Agreem
 
 ## 🌍 Localization
 
-TagSpaces is available in over 20 languages. Help us translate the app by joining our team on [Transifex](https://www.transifex.com/tagspaces/tagspaces/).
+TagSpaces is available in over 20 languages. Help us translate the app by joining our team on [Transifex](https://explore.transifex.com/tagspaces/tagspaces/).
 
 ## 💡 Ideas & Suggestions
 

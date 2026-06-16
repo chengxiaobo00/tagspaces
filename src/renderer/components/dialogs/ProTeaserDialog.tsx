@@ -20,6 +20,7 @@ import AppConfig from '-/AppConfig';
 import DraggablePaper from '-/components/DraggablePaper';
 import TsButton from '-/components/TsButton';
 import TsDialogTitle from '-/components/dialogs/components/TsDialogTitle';
+import { BuyProDialogContext } from '-/components/dialogs/hooks/BuyProDialogContextProvider';
 import { getProTeaserSlides } from '-/content/ProTeaserSlides';
 import { openURLExternally } from '-/services/utils-io';
 import { Box, ButtonGroup } from '@mui/material';
@@ -31,7 +32,7 @@ import Typography from '@mui/material/Typography';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import Links from 'assets/links';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pagination } from 'swiper/modules';
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -69,6 +70,18 @@ function Slide(props: SlideProps) {
     pictureShadow,
   } = props;
   const { t } = useTranslation();
+  const { openBuyProDialog } = useContext(BuyProDialogContext);
+
+  // On Capacitor mobile (App Store / Play) we cannot link out to an
+  // external upgrade page from the purchase CTA — both stores reject
+  // builds that do. Route to the in-app StoreKit / Play Billing sheet
+  // via BuyProDialog instead. Desktop and web keep the external link.
+  const onUpgradeClick = AppConfig.isCapacitor
+    ? () => openBuyProDialog?.()
+    : () => openURLExternally(Links.links.productsOverview, true);
+  const onCtaClick = AppConfig.isCapacitor
+    ? () => openBuyProDialog?.()
+    : () => openURLExternally(ctaURL, true);
 
   return (
     <Box
@@ -96,8 +109,9 @@ function Slide(props: SlideProps) {
         {pictureURL && (
           <a
             href="#"
-            onClick={() => {
-              openURLExternally(ctaURL, true);
+            onClick={(e) => {
+              e.preventDefault();
+              onCtaClick();
             }}
             style={{
               paddingTop: 15,
@@ -134,18 +148,12 @@ function Slide(props: SlideProps) {
         <br />
         <Box sx={{ whiteSpace: 'nowrap' }}>
           <ButtonGroup>
-            <TsButton
-              onClick={() => {
-                openURLExternally(Links.links.productsOverview, true);
-              }}
-            >
+            <TsButton onClick={onUpgradeClick}>
               {t('core:compareAndUpgrade')}
             </TsButton>
             {ctaTitle && (
               <TsButton
-                onClick={() => {
-                  openURLExternally(ctaURL, true);
-                }}
+                onClick={onCtaClick}
                 sx={{ marginLeft: AppConfig.defaultSpaceBetweenButtons }}
               >
                 {ctaTitle}

@@ -17,6 +17,7 @@
  */
 
 import AppConfig from '-/AppConfig';
+import { isProUnlockedSync } from '-/services/iap';
 
 let tsPro;
 
@@ -30,7 +31,10 @@ try {
   }
 }
 
-if (AppConfig.isCapacitorAndroid) {
+// On Capacitor (iOS + Android) the Pro feature set additionally requires a
+// valid entitlement, resolved by services/iap.ts. Other platforms gate
+// purely on the require() result above.
+if (AppConfig.isCapacitor && !isProUnlockedSync()) {
   tsPro = undefined;
 }
 

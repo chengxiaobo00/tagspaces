@@ -1,0 +1,358 @@
+/**
+ * TagSpaces - universal file and folder organizer
+ * Copyright (C) 2017-present TagSpaces GmbH
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License (version 3) as
+ * published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+// In-app purchase service for the Capacitor mobile apps. Wraps
+// capacitor-plugin-cdv-purchase (the Capacitor edition of Fovea's
+// well-known cordova-plugin-purchase) which talks to StoreKit 2 on iOS
+// and Google Play Billing v8.3+ on Android. No third-party data
+// processor — receipts only go to Apple/Google.
+//
+// The entitlement is resolved from the store and exposed synchronously so
+// consumers can read it at module-load time without awaiting a Promise.
+// After a verified purchase or restore it is refreshed and a soft reload
+// re-evaluates the Pro gate with the new value.
+//
+// The CdvPurchase store is event-driven: register product → set up
+// listeners → initialize. The verified→finish flow is mandatory on
+// StoreKit 2 / Play Billing v8 (otherwise the platforms keep retrying).
+// No-op on desktop and web.
+
+import AppConfig from '-/AppConfig';
+
+const PRO_PRODUCT_ID = 'org.tagspaces.mobileapp.pro';
+const TS_IAP_PRO_KEY = 'tsIapProEntitlement';
+
+export interface IAPProduct {
+  id: string;
+  title: string;
+  description: string;
+  /** Localized formatted price, e.g. "$29.99". Display this directly. */
+  price: string;
+  currency?: string;
+}
+
+export interface IAPPurchaseResult {
+  success: boolean;
+  cancelled?: boolean;
+  error?: string;
+}
+
+/**
+ * Synchronous Pro entitlement check for the Capacitor mobile platforms.
+ * Reflects the entitlement resolved by initializeIap() and refreshed by
+ * the post-purchase listeners. Returns false on non-Capacitor builds.
+ *
+ * Safe to call from a module-load context (no async, no React).
+ */
+export function isProUnlockedSync(): boolean {
+  if (!AppConfig.isCapacitor) return false;
+  try {
+    return localStorage.getItem(TS_IAP_PRO_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+/** Whether IAP is usable on the current platform. */
+export function isIapAvailable(): boolean {
+  return Boolean(AppConfig.isCapacitor);
+}
+
+function setEntitlementCache(unlocked: boolean): void {
+  try {
+    localStorage.setItem(TS_IAP_PRO_KEY, unlocked ? 'true' : 'false');
+  } catch {
+    /* localStorage unavailable — entitlement won't persist across reloads */
+  }
+}
+
+function reloadAfterEntitlementChange(): void {
+  // The Pro gate is evaluated once at bundle load. After a successful
+  // purchase or restore we reload so it re-evaluates. Brief flash; simplest
+  // model that doesn't require migrating every `if (Pro)` call site.
+  setTimeout(() => {
+    try {
+      window.location.reload();
+    } catch {
+      /* ignore */
+    }
+  }, 250);
+}
+
+// --- CdvPurchase plugin singleton ---
+
+type CdvStore = any;
+type CdvPurchaseModule = any;
+
+let cachedModule: CdvPurchaseModule | null = null;
+let initializePromise: Promise<void> | null = null;
+
+async function loadPlugin(): Promise<CdvPurchaseModule | null> {
+  if (!isIapAvailable()) return null;
+  if (cachedModule) return cachedModule;
+  try {
+    // Dynamic import keeps the dependency out of desktop/web hot paths;
+    // webpack still resolves it at build time (it's in node_modules), so
+    // run `npm install` after pulling these changes.
+    cachedModule = await import('capacitor-plugin-cdv-purchase');
+    return cachedModule;
+  } catch (e) {
+    console.warn(
+      '[iap] capacitor-plugin-cdv-purchase not resolvable:',
+      (e as Error)?.message,
+    );
+    return null;
+  }
+}
+
+/**
+ * Initialize the CdvPurchase store once at app boot. Registers our Pro
+ * product against both platforms, wires the verify→finish purchase
+ * lifecycle, and queries current ownership. If the entitlement state
+ * changes during init (fresh install with prior purchase, or refund
+ * detected since last launch) we reload so the Pro module gate at
+ * src/renderer/pro/index.ts re-evaluates.
+ *
+ * Safe to call on any platform — no-ops off-Capacitor. Idempotent: extra
+ * calls return the in-flight or completed promise.
+ */
+export async function initializeIap(): Promise<void> {
+  if (!isIapAvailable()) return;
+  if (initializePromise) return initializePromise;
+  initializePromise = (async () => {
+    const mod = await loadPlugin();
+    if (!mod) return;
+    const { store, ProductType, Platform } = mod;
+    if (!store) return;
+
+    const wasUnlocked = isProUnlockedSync();
+
+    // Register the non-consumable Pro product for both stores. The
+    // platform-appropriate one activates at initialize() time below.
+    try {
+      store.register([
+        {
+          id: PRO_PRODUCT_ID,
+          type: ProductType.NON_CONSUMABLE,
+          platform: Platform.APPLE_APPSTORE,
+        },
+        {
+          id: PRO_PRODUCT_ID,
+          type: ProductType.NON_CONSUMABLE,
+          platform: Platform.GOOGLE_PLAY,
+        },
+      ]);
+    } catch (e) {
+      console.warn('[iap] store.register failed:', e);
+      return;
+    }
+
+    // Purchase lifecycle: approved → verify (server-side or local) →
+    // finish. For a non-consumable IAP with no backend, the plugin's
+    // built-in local verification is enough; once finished we mark the
+    // entitlement cache and reload.
+    try {
+      store
+        .when()
+        .approved((transaction: any) => {
+          try {
+            return transaction.verify();
+          } catch (e) {
+            console.warn('[iap] verify call failed:', e);
+            return undefined;
+          }
+        })
+        .verified((receipt: any) => {
+          try {
+            return receipt.finish();
+          } catch (e) {
+            console.warn('[iap] receipt.finish failed:', e);
+            return undefined;
+          }
+        })
+        .finished((_transaction: any) => {
+          if (store.owned?.(PRO_PRODUCT_ID)) {
+            setEntitlementCache(true);
+            reloadAfterEntitlementChange();
+          }
+        })
+        .productUpdated(() => {
+          syncOwnedToCache(store);
+        })
+        .receiptUpdated(() => {
+          syncOwnedToCache(store);
+        });
+    } catch (e) {
+      console.warn('[iap] failed to register lifecycle listeners:', e);
+    }
+
+    try {
+      const platforms = [Platform.APPLE_APPSTORE, Platform.GOOGLE_PLAY];
+      await store.initialize(platforms);
+    } catch (e) {
+      console.warn('[iap] store.initialize failed:', e);
+      return;
+    }
+
+    // After initialize the store has refreshed receipts and products.
+    syncOwnedToCache(store);
+    const isUnlocked = isProUnlockedSync();
+    if (wasUnlocked !== isUnlocked) {
+      reloadAfterEntitlementChange();
+    }
+  })();
+  return initializePromise;
+}
+
+function syncOwnedToCache(store: CdvStore): void {
+  try {
+    const owned = Boolean(store.owned?.(PRO_PRODUCT_ID));
+    setEntitlementCache(owned);
+  } catch (e) {
+    console.warn('[iap] owned() lookup failed:', e);
+  }
+}
+
+/**
+ * Fetch the Pro product details (localized price, title) for display
+ * inside the Buy Pro sheet. Returns null on non-Capacitor or if the
+ * store hasn't loaded the product yet.
+ */
+export async function getProProduct(): Promise<IAPProduct | null> {
+  if (!isIapAvailable()) return null;
+  try {
+    await initializeIap();
+    const mod = await loadPlugin();
+    if (!mod) return null;
+    const { store } = mod;
+    const product = store?.get?.(PRO_PRODUCT_ID);
+    if (!product) return null;
+    const offer = product.offers?.[0];
+    const pricingPhase = offer?.pricingPhases?.[0];
+    return {
+      id: PRO_PRODUCT_ID,
+      title: product.title ?? 'TagSpaces Pro',
+      description: product.description ?? '',
+      price: pricingPhase?.price ?? '',
+      currency: pricingPhase?.currency,
+    };
+  } catch (e) {
+    console.warn('[iap] getProProduct failed:', e);
+    return null;
+  }
+}
+
+/**
+ * Initiate the Pro purchase flow. Shows the native StoreKit / Play
+ * Billing sheet. Returns immediately after the user closes the sheet;
+ * the entitlement is set by the verify→finish listener wired up in
+ * initializeIap(), which then triggers a reload. Callers can check
+ * isProUnlockedSync() after the reload.
+ */
+export async function purchasePro(): Promise<IAPPurchaseResult> {
+  if (!isIapAvailable()) {
+    return { success: false, error: 'IAP not available on this platform' };
+  }
+  try {
+    await initializeIap();
+    const mod = await loadPlugin();
+    if (!mod) return { success: false, error: 'IAP plugin unavailable' };
+    const { store } = mod;
+    const product = store?.get?.(PRO_PRODUCT_ID);
+    const offer = product?.offers?.[0];
+    if (!offer) {
+      return { success: false, error: 'Pro product not loaded from store' };
+    }
+    const result = await store.order(offer);
+    // result is undefined on success; or an error object with .isError.
+    if (result && (result as any).isError) {
+      const err = result as any;
+      const code = err.code ?? err.errorCode;
+      if (code === 6500 || /cancel/i.test(err.message ?? '')) {
+        return { success: false, cancelled: true };
+      }
+      return { success: false, error: err.message ?? 'Purchase failed' };
+    }
+    // No error returned — purchase succeeded or is pending verification.
+    // Entitlement cache + reload is handled by the verify→finish listener.
+    return { success: true };
+  } catch (e: any) {
+    const msg = e?.message ?? String(e);
+    if (e?.code === 6500 || /cancel/i.test(msg)) {
+      return { success: false, cancelled: true };
+    }
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * User-triggered restore. Asks the store to refresh and re-emit any
+ * receipts; if the user already owns Pro, the verify→finish listener
+ * updates the cache and reloads.
+ */
+export async function restoreProPurchase(): Promise<{ restored: boolean }> {
+  if (!isIapAvailable()) return { restored: false };
+  try {
+    await initializeIap();
+    const mod = await loadPlugin();
+    if (!mod) return { restored: false };
+    const { store } = mod;
+    await store.restorePurchases();
+    syncOwnedToCache(store);
+    return { restored: isProUnlockedSync() };
+  } catch (e) {
+    console.warn('[iap] restore failed:', e);
+    return { restored: false };
+  }
+}
+
+/**
+ * Open the platform's promo-code redemption UI. iOS uses StoreKit's
+ * native redemption sheet (CdvPurchase exposes it via
+ * store.manageSubscriptions / a dedicated method depending on plugin
+ * version); Android has no in-app API, so we deep-link to the Play
+ * Store's promo redemption page.
+ */
+export async function presentCodeRedemption(): Promise<void> {
+  if (!isIapAvailable()) return;
+  try {
+    if (AppConfig.isCapacitoriOS) {
+      await initializeIap();
+      const mod = await loadPlugin();
+      if (!mod) return;
+      const { store } = mod;
+      // CdvPurchase 13+ exposes redeemCode() on iOS for the offer code
+      // redemption sheet. Older versions used presentCodeRedemptionSheet
+      // on the iOS adapter directly; try both for forward compatibility.
+      const redeem =
+        store?.redeemCode ?? store?.iosAdapter?.presentCodeRedemptionSheet;
+      if (typeof redeem === 'function') {
+        await redeem.call(store);
+      }
+      return;
+    }
+    if (AppConfig.isCapacitorAndroid) {
+      // Play has no in-app API for promo code redemption. Deep-link to
+      // the Play Store redemption page; user pastes the code there.
+      window.open('https://play.google.com/redeem', '_blank');
+    }
+  } catch (e) {
+    console.warn('[iap] redeem code failed:', e);
+  }
+}
+
+export const ProProductId = PRO_PRODUCT_ID;

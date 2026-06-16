@@ -163,6 +163,13 @@ async function onDeviceReady() {
   // Initialize file system and load settings
   getFileSystem();
 
+  // Refresh Pro entitlement cache from the store (StoreKit / Play Billing).
+  // Fire-and-forget: rest of bootstrap doesn't depend on it. If the
+  // entitlement state changes (fresh install with prior purchase, refund
+  // processed since last launch) the service triggers a reload so the
+  // Pro gate at src/renderer/pro/index.ts re-evaluates.
+  void import('-/services/iap').then(({ initializeIap }) => initializeIap());
+
   // iOS: hide splash screen after a delay
   if (Capacitor.getPlatform() === 'ios') {
     setTimeout(() => {
