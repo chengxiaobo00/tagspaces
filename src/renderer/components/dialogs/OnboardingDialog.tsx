@@ -22,8 +22,10 @@ import WizardFinished from '-/assets/images/computer-desk.svg';
 import NewLook from '-/assets/images/desktop.svg';
 import LocationConcept from '-/assets/images/organize.svg';
 import TagsDemoVideo from '-/assets/videos/tags-demo.mp4';
+import { NavigateBeforeIcon, NavigateNextIcon } from '-/components/CommonIcons';
 import TsTooltip from '-/components/TsTooltip';
 import TsButton from '-/components/TsButton';
+import TsIconButton from '-/components/TsIconButton';
 import TsSelect from '-/components/TsSelect';
 import TsDialogTitle from '-/components/dialogs/components/TsDialogTitle';
 import { useCreateEditLocationDialogContext } from '-/components/dialogs/hooks/useCreateEditLocationDialogContext';
@@ -837,24 +839,23 @@ function OnboardingDialog(props: Props) {
           gap: 1,
         }}
       >
-        <TsButton
+        <TsIconButton
           data-tid="onboardingBackTID"
+          tooltip={t('core:goback')}
           onClick={() => (swiperRef.current as any)?.swiper?.slidePrev()}
           disabled={activeIndex === 0}
-          sx={{ minWidth: 80 }}
         >
-          {t('core:goback')}
-        </TsButton>
+          <NavigateBeforeIcon />
+        </TsIconButton>
         <Box className="onboarding-pagination" />
         {activeIndex < TOTAL_SLIDES - 1 ? (
-          <TsButton
-            variant="contained"
+          <TsIconButton
             data-tid="onboardingNextTID"
+            tooltip={t('core:next')}
             onClick={() => (swiperRef.current as any)?.swiper?.slideNext()}
-            sx={{ minWidth: 80 }}
           >
-            {t('core:next')}
-          </TsButton>
+            <NavigateNextIcon />
+          </TsIconButton>
         ) : primaryLocation ? (
           <TsButton
             variant="contained"

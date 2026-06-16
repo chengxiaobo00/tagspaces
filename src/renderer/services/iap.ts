@@ -32,6 +32,8 @@
 // No-op on desktop and web.
 
 import AppConfig from '-/AppConfig';
+import { openURLExternally } from '-/services/utils-io';
+import Links from 'assets/links';
 
 const PRO_PRODUCT_ID = 'org.tagspaces.mobileapp.pro';
 const TS_IAP_PRO_KEY = 'tsIapProEntitlement';
@@ -346,9 +348,11 @@ export async function presentCodeRedemption(): Promise<void> {
       return;
     }
     if (AppConfig.isCapacitorAndroid) {
-      // Play has no in-app API for promo code redemption. Deep-link to
-      // the Play Store redemption page; user pastes the code there.
-      window.open('https://play.google.com/redeem', '_blank');
+      // Play has no in-app API for promo code redemption. Open the Play
+      // Store redemption page in the system browser (Custom Tab) so the
+      // user can paste the code; raw window.open is unreliable in the
+      // Capacitor WebView.
+      openURLExternally(Links.links.playStoreRedeem, true);
     }
   } catch (e) {
     console.warn('[iap] redeem code failed:', e);

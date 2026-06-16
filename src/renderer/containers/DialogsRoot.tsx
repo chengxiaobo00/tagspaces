@@ -76,12 +76,15 @@ const providers = [
   AboutDialogContextProvider,
   KeyboardDialogContextProvider,
   LinkDialogContextProvider,
-  ProTeaserDialogContextProvider,
   // BuyProDialogContextProvider must wrap ProTeaserDialogContextProvider so
   // the "Compare and Upgrade" CTA inside ProTeaserDialog can call
   // openBuyProDialog() on Capacitor mobile (replaces the external URL link
   // — both stores forbid linking out from the actual purchase flow).
+  // It must be listed BEFORE ProTeaserDialogContextProvider: reduceRight
+  // makes earlier entries the outer (ancestor) providers, and ProTeaserDialog
+  // renders as a sibling of {children}, so it only sees providers above it.
   BuyProDialogContextProvider,
+  ProTeaserDialogContextProvider,
   AiGenerationDialogContextProvider,
   ResolveConflictContextProvider,
   DownloadUrlContextProvider,

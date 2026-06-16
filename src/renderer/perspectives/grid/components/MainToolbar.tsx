@@ -269,7 +269,7 @@ function MainToolbar(props: Props) {
           )}
         <Divider flexItem orientation="vertical" sx={{ mx: 0.5, my: 1 }} />
       </Box>
-      <Box sx={{ display: { xs: 'none', sm: 'flex' } }}>
+      <Box sx={{ display: 'flex' }}>
         <ZoomComponent preview={false} />
         <Divider flexItem orientation="vertical" sx={{ mx: 0.5, my: 1 }} />
       </Box>

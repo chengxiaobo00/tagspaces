@@ -17,8 +17,10 @@
  */
 
 import AppConfig from '-/AppConfig';
+import { NavigateBeforeIcon, NavigateNextIcon } from '-/components/CommonIcons';
 import DraggablePaper from '-/components/DraggablePaper';
 import TsButton from '-/components/TsButton';
+import TsIconButton from '-/components/TsIconButton';
 import TsDialogTitle from '-/components/dialogs/components/TsDialogTitle';
 import { BuyProDialogContext } from '-/components/dialogs/hooks/BuyProDialogContextProvider';
 import { getProTeaserSlides } from '-/content/ProTeaserSlides';
@@ -74,14 +76,18 @@ function Slide(props: SlideProps) {
 
   // On Capacitor mobile (App Store / Play) we cannot link out to an
   // external upgrade page from the purchase CTA — both stores reject
-  // builds that do. Route to the in-app StoreKit / Play Billing sheet
-  // via BuyProDialog instead. Desktop and web keep the external link.
+  // builds that do. Route the upgrade CTA to the in-app StoreKit / Play
+  // Billing sheet via BuyProDialog instead. Desktop and web keep the
+  // external link. The "Show me more" / image CTA points at documentation
+  // (and the AI/Pro-Web slides at a contact mailto) — these are
+  // informational, not purchase links, so they open externally on every
+  // platform (App Store allows non-purchase outbound links).
   const onUpgradeClick = AppConfig.isCapacitor
     ? () => openBuyProDialog?.()
     : () => openURLExternally(Links.links.productsOverview, true);
-  const onCtaClick = AppConfig.isCapacitor
-    ? () => openBuyProDialog?.()
-    : () => openURLExternally(ctaURL, true);
+  const onCtaClick = () => {
+    if (ctaURL) openURLExternally(ctaURL, true);
+  };
 
   return (
     <Box
@@ -148,11 +154,12 @@ function Slide(props: SlideProps) {
         <br />
         <Box sx={{ whiteSpace: 'nowrap' }}>
           <ButtonGroup>
-            <TsButton onClick={onUpgradeClick}>
+            <TsButton variant="contained" onClick={onUpgradeClick}>
               {t('core:compareAndUpgrade')}
             </TsButton>
             {ctaTitle && (
               <TsButton
+                variant="contained"
                 onClick={onCtaClick}
                 sx={{ marginLeft: AppConfig.defaultSpaceBetweenButtons }}
               >
@@ -221,6 +228,25 @@ function ProTeaserDialog(props: Props) {
                   box-sizing: border-box;
                   height: auto;
                 }
+                ${
+                  smallScreen
+                    ? `
+                /* Fullscreen (mobile) dialog: the Swiper container has a
+                   fixed height and overflow:hidden, so a slide taller than
+                   the screen would be clipped and unscrollable — Swiper also
+                   eats the vertical drag on iOS. Give each slide its own
+                   vertical scroll area with native momentum scrolling. */
+                .pro-teaser-swiper,
+                .pro-teaser-swiper .swiper-wrapper {
+                  height: 100%;
+                }
+                .pro-teaser-swiper .swiper-slide {
+                  height: 100%;
+                  overflow-y: auto;
+                  -webkit-overflow-scrolling: touch;
+                }`
+                    : ''
+                }
                 .proteaser-pagination {
                   display: flex;
                   justify-content: center;
@@ -285,34 +311,23 @@ function ProTeaserDialog(props: Props) {
           gap: 1,
         }}
       >
-        <TsButton
+        <TsIconButton
           data-tid="proTeaserBackTID"
+          tooltip={t('core:goback')}
           onClick={() => (swiperRef.current as any)?.swiper?.slidePrev()}
           disabled={activeIndex === 0}
-          sx={{ minWidth: 80 }}
         >
-          {t('core:goback')}
-        </TsButton>
+          <NavigateBeforeIcon />
+        </TsIconButton>
         <Box className="proteaser-pagination" />
-        {activeIndex < totalSlides - 1 ? (
-          <TsButton
-            variant="contained"
-            data-tid="proTeaserNextTID"
-            onClick={() => (swiperRef.current as any)?.swiper?.slideNext()}
-            sx={{ minWidth: 80 }}
-          >
-            {t('core:next')}
-          </TsButton>
-        ) : (
-          <TsButton
-            variant="contained"
-            data-tid="proTeaserCloseTID"
-            onClick={onClose}
-            sx={{ minWidth: 80 }}
-          >
-            {t('core:closeButton')}
-          </TsButton>
-        )}
+        <TsIconButton
+          data-tid="proTeaserNextTID"
+          tooltip={t('core:next')}
+          onClick={() => (swiperRef.current as any)?.swiper?.slideNext()}
+          disabled={activeIndex === totalSlides - 1}
+        >
+          <NavigateNextIcon />
+        </TsIconButton>
       </DialogActions>
     </Dialog>
   );

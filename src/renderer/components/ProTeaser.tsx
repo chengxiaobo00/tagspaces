@@ -16,9 +16,11 @@
  *
  */
 
+import AppConfig from '-/AppConfig';
 import { CloseDialogIcon } from '-/components/CommonIcons';
 import TsButton from '-/components/TsButton';
 import TsIconButton from '-/components/TsIconButton';
+import { BuyProDialogContext } from '-/components/dialogs/hooks/BuyProDialogContextProvider';
 import { useProTeaserDialogContext } from '-/components/dialogs/hooks/useProTeaserDialogContext';
 import { openURLExternally } from '-/services/utils-io';
 import { keyframes } from '@emotion/react';
@@ -37,7 +39,7 @@ import CardContent from '@mui/material/CardContent';
 import { OverridableComponent } from '@mui/material/OverridableComponent';
 import Typography from '@mui/material/Typography';
 import Links from 'assets/links';
-import { useState } from 'react';
+import { useContext, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const floatAnim = keyframes`
@@ -139,7 +141,15 @@ interface Props {
 function ProTeaser(props: Props) {
   const { setShowTeaserBanner } = props;
   const { openProTeaserDialog } = useProTeaserDialogContext();
+  const { openBuyProDialog } = useContext(BuyProDialogContext);
   const { t } = useTranslation();
+
+  // On Capacitor mobile the upgrade CTA opens the in-app StoreKit / Play
+  // Billing sheet (both stores forbid linking out from the purchase flow).
+  // Desktop and web keep the external products page. Mirrors ProTeaserDialog.
+  const onUpgradeClick = AppConfig.isCapacitor
+    ? () => openBuyProDialog?.()
+    : () => openURLExternally(Links.links.productsOverview, true);
 
   const [adIndex] = useState<number>(getNextAdIndex);
   const ad = proAds[adIndex];
@@ -239,7 +249,7 @@ function ProTeaser(props: Props) {
             onClick={(event: any) => {
               event.preventDefault();
               event.stopPropagation();
-              openURLExternally(Links.links.productsOverview, true);
+              onUpgradeClick();
             }}
           >
             {t('upgrade')}
