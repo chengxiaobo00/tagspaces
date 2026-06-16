@@ -40,6 +40,15 @@ const PAGE_HTML = `<!DOCTYPE html>
 let server;
 let baseUrl;
 
+// Match a grid entry whose data-tid starts with the given base name, ignoring
+// the auto datetime tag + extension that `dataTidFormat` turns into `_…`.
+async function expectEntryStartingWith(base, timeout = 20000) {
+  await global.client.waitForSelector(`[data-tid^="fsEntryName_${base}"]`, {
+    state: 'visible',
+    timeout,
+  });
+}
+
 async function openDownloadUrlDialog() {
   await clickOn('[data-tid=folderContainerOpenDirMenu]');
   await clickOnMenuOperation('newFromDownloadURLTID');
@@ -87,13 +96,12 @@ test.afterAll(async () => {
 
 test.afterEach(async ({ isS3, testDataDir }) => {
   // Keep the shared local test data clean (S3 is reset by other suites' refresh).
+  // Downloads carry an auto datetime tag in the filename (e.g. sample[…].txt),
+  // so match by prefix rather than exact name.
   if (!isS3) {
-    ['sample.txt', 'page.md', 'page.html'].forEach((name) => {
-      const p = path.join(testDataDir, name);
-      if (fs.existsSync(p)) {
-        fs.rmSync(p, { force: true });
-      }
-    });
+    fs.readdirSync(testDataDir)
+      .filter((name) => /^(sample|page|download)[[.]/.test(name))
+      .forEach((name) => fs.rmSync(path.join(testDataDir, name), { force: true }));
   }
   await clearDataStorage();
 });
@@ -113,14 +121,16 @@ test.describe('TST54 - Download from URL', () => {
   test('TST5420 - Download raw file into the location [electron,s3]', async () => {
     await openDownloadUrlDialog();
     await setInputValue('[data-tid=newUrlTID] input', baseUrl + '/sample.txt');
-    // Default "Original file" format → straight binary download into the location.
+    // Default "Original file" format → straight binary download into the
+    // location. The filename carries an auto datetime tag (sample[…].txt), so
+    // match the entry by prefix.
     await clickOn('[data-tid=downloadFileUrlTID]');
-    await expectElementExist(getGridFileSelector('sample.txt'), true, 20000);
+    await expectEntryStartingWith('sample');
     // The raw download opens the upload-progress dialog — dismiss it before
     // interacting with the directory menu again.
     await clickOnIfVisible('[data-tid=closeFileUploadTID]');
     await reloadDirectory();
-    await expectElementExist(getGridFileSelector('sample.txt'), true, 20000);
+    await expectEntryStartingWith('sample');
   });
 
   test('TST5421 - Clip an HTML page as Markdown [electron,s3]', async ({
@@ -131,13 +141,17 @@ test.describe('TST54 - Download from URL', () => {
     await setInputValue('[data-tid=newUrlTID] input', baseUrl + '/page.html');
     await clickOn('[data-tid=downloadFormatMarkdownTID]');
     await clickOn('[data-tid=downloadFileUrlTID]');
-    // page.html → page.md saved into the location.
-    await expectElementExist(getGridFileSelector('page.md'), true, 20000);
+    // page.html → page[…datetime tag…].md saved into the location.
+    await expectEntryStartingWith('page');
 
     // On local locations assert the conversion result on disk: heading/text
     // survive, the <script> is stripped by DOMPurify.
     if (!isS3) {
-      const md = fs.readFileSync(path.join(testDataDir, 'page.md'), 'utf8');
+      const mdFile = fs
+        .readdirSync(testDataDir)
+        .find((name) => /^page.*\.md$/.test(name));
+      expect(mdFile).toBeTruthy();
+      const md = fs.readFileSync(path.join(testDataDir, mdFile), 'utf8');
       expect(md).toContain('Hello Heading');
       expect(md).toContain('Some paragraph text');
       expect(md).not.toContain('should-be-stripped');
