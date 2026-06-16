@@ -511,27 +511,31 @@ function MobileNavigation(props: Props) {
                       </ListItemIcon>
                       <ListItemText primary={t('core:addFiles')} />
                     </MenuItem>
-                    <MenuItem
-                      key="newFromDownloadURL"
-                      data-tid="newFromDownloadURLTID"
-                      onClick={() => {
-                        openDownloadUrl();
-                        setOpenCreateMenu(false);
-                        hideDrawer?.();
-                      }}
-                    >
-                      <ListItemIcon>
-                        <DownloadIcon />
-                      </ListItemIcon>
-                      <ListItemText
-                        primary={
-                          <>
-                            {t('core:newFromDownloadURL')}
-                            <BetaLabel />
-                          </>
-                        }
-                      />
-                    </MenuItem>
+                    {/* Web can't bypass browser CORS/CSP — only show the URL
+                        download where it saves into the location. */}
+                    {(AppConfig.isElectron || AppConfig.isNativeMobile) && (
+                      <MenuItem
+                        key="newFromDownloadURL"
+                        data-tid="newFromDownloadURLTID"
+                        onClick={() => {
+                          openDownloadUrl();
+                          setOpenCreateMenu(false);
+                          hideDrawer?.();
+                        }}
+                      >
+                        <ListItemIcon>
+                          <DownloadIcon />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={
+                            <>
+                              {t('core:newFromDownloadURL')}
+                              <BetaLabel />
+                            </>
+                          }
+                        />
+                      </MenuItem>
+                    )}
                     <Divider />
                     <MenuItem
                       key="createNewFolder"

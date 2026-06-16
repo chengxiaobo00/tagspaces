@@ -225,23 +225,27 @@ function NewSubMenu(props: Props) {
               <ListItemText primary={t('core:addFiles')} />
             </MenuItem>
           )}
-          <MenuItem
-            key="newFromDownloadURL"
-            data-tid="newFromDownloadURLTID"
-            onClick={() => run(() => openDownloadUrl())}
-          >
-            <ListItemIcon>
-              <DownloadIcon />
-            </ListItemIcon>
-            <ListItemText
-              primary={
-                <>
-                  {t('core:newFromDownloadURL')}
-                  <BetaLabel />
-                </>
-              }
-            />
-          </MenuItem>
+          {/* Web can't bypass browser CORS/CSP — the download only saves into
+              the location on desktop and native mobile, so hide it elsewhere. */}
+          {(AppConfig.isElectron || AppConfig.isNativeMobile) && (
+            <MenuItem
+              key="newFromDownloadURL"
+              data-tid="newFromDownloadURLTID"
+              onClick={() => run(() => openDownloadUrl())}
+            >
+              <ListItemIcon>
+                <DownloadIcon />
+              </ListItemIcon>
+              <ListItemText
+                primary={
+                  <>
+                    {t('core:newFromDownloadURL')}
+                    <BetaLabel />
+                  </>
+                }
+              />
+            </MenuItem>
+          )}
         </TsMenuList>
       </Menu>
     </>
