@@ -195,6 +195,34 @@ export default function loadMainEvents() {
     }
   });
 
+  // Cheaply probe a URL's Content-Type (used to recognize PDFs/images served
+  // from extension-less URLs, e.g. arxiv.org/pdf/...). Reads only the response
+  // headers and cancels the body so the file isn't downloaded.
+  ipcMain.handle('probeContentType', async (_event, url) => {
+    if (!isHttpUrl(url)) {
+      return { error: 'Unsupported URL scheme (only http/https allowed)' };
+    }
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 15000);
+    try {
+      const response = await net.fetch(url, {
+        headers: browserHeaders(url),
+        signal: controller.signal,
+      });
+      const contentType = response.headers.get('content-type') || '';
+      try {
+        await response.body?.cancel();
+      } catch (e) {
+        // ignore — we already have the header we need
+      }
+      return { contentType };
+    } catch (error) {
+      return { error: error.message };
+    } finally {
+      clearTimeout(timer);
+    }
+  });
+
   // Fetch a URL and return its bytes (object-store locations + image inlining for
   // the HTML/Markdown "save as" formats). Same browser-stack request as fetchUrl.
   // `options` lets callers harden untrusted sub-resource fetches (page images):

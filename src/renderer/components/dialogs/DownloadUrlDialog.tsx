@@ -33,6 +33,7 @@ import { useCurrentLocationContext } from '-/hooks/useCurrentLocationContext';
 import { useEditedEntryContext } from '-/hooks/useEditedEntryContext';
 import { useIOActionsContext } from '-/hooks/useIOActionsContext';
 import { useNotificationContext } from '-/hooks/useNotificationContext';
+import { getExtensionForMimeType } from '-/services/utils-io';
 import { actions as AppActions, AppDispatch } from '-/reducers/app';
 import {
   getFileNameTagPlace,
@@ -88,38 +89,43 @@ function sanitizeDownloadFileName(name: string): string {
 }
 
 // Split a sanitized filename into base name and extension (incl. leading dot).
+// Only a real-looking extension counts (≤8 chars, contains a letter), so a
+// numeric suffix such as the arXiv id "2605.22391" is kept as part of the name
+// rather than mistaken for an extension.
 function splitNameExt(name: string): { base: string; ext: string } {
   const dot = name.lastIndexOf('.');
-  return dot > 0
-    ? { base: name.slice(0, dot), ext: name.slice(dot) }
-    : { base: name, ext: '' };
-}
-
-// Best-effort base name + original extension from a URL.
-function deriveNameFromUrl(urlStr: string): { base: string; ext: string } {
-  let fileName: string;
-  let pathParts: string[];
-  const url = new URL(urlStr);
-  if (url.pathname) {
-    const i = url.pathname.lastIndexOf('/');
-    if (i > -1) {
-      fileName = url.pathname.substring(i + 1);
-      if (!fileName) {
-        pathParts = url.pathname.split('/').filter(Boolean);
-      }
-    } else {
-      fileName = url.pathname;
+  if (dot > 0) {
+    const ext = name.slice(dot);
+    if (/^\.[a-z0-9]{1,8}$/i.test(ext) && /[a-z]/i.test(ext)) {
+      return { base: name.slice(0, dot), ext };
     }
   }
-  if (!fileName) {
-    fileName = `${
-      url.hostname +
-      (pathParts && pathParts.length > 0 ? pathParts.join('-') : '')
-    }.html`;
-  } else if (fileName.indexOf('.') === -1) {
-    fileName = `${url.hostname}-${fileName}.html`;
+  return { base: name, ext: '' };
+}
+
+// Best-effort base name + extension from a URL. Uses the last non-empty path
+// segment (so `…/blog/my-article` and `…/blog/my-article/` both yield
+// `my-article`); for a bare host or "/" it falls back to the hostname. An
+// extension-less segment (article slug) or the hostname defaults to `.html`,
+// while a real file segment keeps its extension (`photo.jpg`, `report.pdf`).
+function deriveNameFromUrl(urlStr: string): { base: string; ext: string } {
+  const url = new URL(urlStr);
+  const segments = url.pathname.split('/').filter(Boolean);
+
+  if (segments.length > 0) {
+    const last = sanitizeDownloadFileName(segments[segments.length - 1]);
+    const { base, ext } = splitNameExt(last);
+    return {
+      base: base || sanitizeDownloadFileName(url.hostname) || 'download',
+      ext: ext || '.html',
+    };
   }
-  return splitNameExt(sanitizeDownloadFileName(fileName) || 'download.html');
+  // No usable path — keep the whole hostname (e.g. "pi.dev") as the base name;
+  // its dots aren't a file extension, so don't split on them.
+  return {
+    base: sanitizeDownloadFileName(url.hostname) || 'download',
+    ext: '.html',
+  };
 }
 
 // Extension implied by the chosen save format (clipped formats override the
@@ -144,7 +150,7 @@ function DownloadUrlDialog(props: Props) {
   const smallScreen = useMediaQuery(theme.breakpoints.down('md'));
   const { setReflectActions } = useEditedEntryContext();
   const { currentLocation } = useCurrentLocationContext();
-  const { downloadUrl, downloadUrlAs, getUrlReaderable } =
+  const { downloadUrl, downloadUrlAs, inspectUrl, probeContentType } =
     useIOActionsContext();
   const { showNotification } = useNotificationContext();
   const { openFileUploadDialog } = useFileUploadDialogContext();
@@ -165,12 +171,18 @@ function DownloadUrlDialog(props: Props) {
   const [fileName, setFileName] = useState<string>('');
   const [tags, setTags] = useState<TS.Tag[]>([]);
   const inputTags = useRef<TS.Tag[]>([]);
-  // Original extension derived from the URL, used when format is "original".
-  const originalExt = useRef<string>('.html');
+  // Source content's extension (from the URL or sniffed Content-Type), used as
+  // the "original" extension and to decide whether conversion is allowed. State
+  // so the convert gate re-renders when a PDF/image is recognized.
+  const [originalExt, setOriginalExt] = useState<string>('.html');
   const [invalidURL, setInvalidURL] = useState<boolean>(false);
   const [saveFormat, setSaveFormat] = useState<SaveFormat>('original');
   const [extractArticle, setExtractArticle] = useState<boolean>(false);
   const [embedImages, setEmbedImages] = useState<boolean>(true);
+
+  // HTML/Markdown conversion only makes sense for real HTML — disable it when
+  // the source is a non-HTML file (PDF, image, …) by extension or Content-Type.
+  const convertDisabled = !isHtmlExtension(originalExt);
 
   // Reset the form and seed an automatic datetime-stamp tag each time the
   // (kept-mounted) dialog opens.
@@ -178,7 +190,7 @@ function DownloadUrlDialog(props: Props) {
     if (open) {
       setUrl('');
       setFileName('');
-      originalExt.current = '.html';
+      setOriginalExt('.html');
       setSaveFormat('original');
       setExtractArticle(false);
       setEmbedImages(true);
@@ -197,25 +209,76 @@ function DownloadUrlDialog(props: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  // When a conversion format is selected, default the "Extract main article"
-  // switch to checked only if Readability considers the page a parseable
-  // article. Fetches the page (debounced) and caches the verdict per URL.
-  const readableCache = useRef<{ url: string; promise: Promise<boolean> }>();
+  // On URL entry, cheaply probe the Content-Type (headers only) so a PDF/image
+  // served from an extension-less URL (e.g. arxiv.org/pdf/...) is recognized:
+  // the extension is corrected and conversion gets disabled. Debounced + cached.
+  const probeCache = useRef<{ url: string; promise: Promise<string> }>();
+  useEffect(() => {
+    if (!open || !/^https?:\/\//i.test(url)) {
+      return undefined;
+    }
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      if (!probeCache.current || probeCache.current.url !== url) {
+        probeCache.current = { url, promise: probeContentType(url) };
+      }
+      probeCache.current.promise
+        .then((contentType) => {
+          if (cancelled) {
+            return undefined;
+          }
+          // Recognize binary types (PDF/image/zip/…) that can't be converted;
+          // ignore HTML/unknown so an HTML page keeps its URL-derived name.
+          const mapped = getExtensionForMimeType(contentType);
+          const ext = mapped ? `.${mapped}` : null;
+          if (ext && !isHtmlExtension(ext)) {
+            setOriginalExt(ext);
+            setSaveFormat('original');
+            setFileName((prev) => splitNameExt(prev).base + ext);
+          }
+          return undefined;
+        })
+        .catch(() => {});
+    }, 400);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+    // probeContentType is a stable context fn.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [url, open]);
+
+  // When a conversion format is selected, fetch the page (debounced, cached per
+  // URL) to (a) default "Extract main article" on only for a parseable article
+  // and (b) detect a PDF body served without a Content-Type — revert to Original.
+  const inspectCache = useRef<{
+    url: string;
+    promise: ReturnType<typeof inspectUrl>;
+  }>();
   useEffect(() => {
     if (!open || saveFormat === 'original' || !/^https?:\/\//i.test(url)) {
       return undefined;
     }
     let cancelled = false;
     const timer = setTimeout(() => {
-      if (!readableCache.current || readableCache.current.url !== url) {
-        readableCache.current = { url, promise: getUrlReaderable(url) };
+      if (!inspectCache.current || inspectCache.current.url !== url) {
+        inspectCache.current = { url, promise: inspectUrl(url) };
       }
-      readableCache.current.promise
-        .then((readerable) => {
-          if (!cancelled) {
-            setExtractArticle(readerable);
+      inspectCache.current.promise
+        .then((info) => {
+          if (cancelled) {
+            return info;
           }
-          return readerable;
+          if (info.isPdf) {
+            // PDF body served from an HTML-looking URL — correct the extension
+            // and fall back to a raw "Original" download.
+            setOriginalExt('.pdf');
+            setSaveFormat('original');
+            setFileName((prev) => `${splitNameExt(prev).base}.pdf`);
+          } else {
+            setExtractArticle(info.readerable);
+          }
+          return info;
         })
         .catch(() => {});
     }, 500);
@@ -223,7 +286,7 @@ function DownloadUrlDialog(props: Props) {
       cancelled = true;
       clearTimeout(timer);
     };
-    // getUrlReaderable is a stable context fn.
+    // inspectUrl is a stable context fn.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [url, saveFormat, open]);
 
@@ -239,7 +302,7 @@ function DownloadUrlDialog(props: Props) {
     }
     try {
       const { base, ext } = deriveNameFromUrl(value);
-      originalExt.current = ext;
+      setOriginalExt(ext);
       setFileName(base + extForFormat(saveFormat, ext));
     } catch (e) {
       // incomplete/invalid URL — leave the filename as-is
@@ -250,8 +313,7 @@ function DownloadUrlDialog(props: Props) {
     if (!value) return;
     setSaveFormat(value);
     setFileName(
-      (prev) =>
-        splitNameExt(prev).base + extForFormat(value, originalExt.current),
+      (prev) => splitNameExt(prev).base + extForFormat(value, originalExt),
     );
   };
 
@@ -305,8 +367,11 @@ function DownloadUrlDialog(props: Props) {
     // filename: name[tag1 tag2].ext
     const allTags = uniqueTags([...tags, ...inputTags.current]);
     const tagTitles = allTags.map((tag) => tag.title);
+    // Re-sanitize the (user-editable) filename so a typed/pasted "../" can't
+    // escape the target directory — generateFileName doesn't strip separators.
     const baseName =
-      fileName || `download${extForFormat(saveFormat, originalExt.current)}`;
+      sanitizeDownloadFileName(fileName) ||
+      `download${extForFormat(saveFormat, originalExt)}`;
     const finalName = generateFileName(
       baseName,
       tagTitles,
@@ -488,11 +553,16 @@ function DownloadUrlDialog(props: Props) {
                 >
                   {t('core:originalFile')}
                 </TsToggleButton>
-                <TsToggleButton value="html" data-tid="downloadFormatHtmlTID">
+                <TsToggleButton
+                  value="html"
+                  disabled={convertDisabled}
+                  data-tid="downloadFormatHtmlTID"
+                >
                   {t('core:cleanedHtml')}
                 </TsToggleButton>
                 <TsToggleButton
                   value="markdown"
+                  disabled={convertDisabled}
                   data-tid="downloadFormatMarkdownTID"
                 >
                   {t('core:markdown')}

@@ -77,6 +77,10 @@ test.beforeAll(async ({ isWeb, isS3, webServerPort }, testInfo) => {
     } else if (req.url === '/page.html') {
       res.writeHead(200, { 'Content-Type': 'text/html' });
       res.end(PAGE_HTML);
+    } else if (req.url === '/paper/2605.22391') {
+      // PDF served from an extension-less URL (arxiv-style).
+      res.writeHead(200, { 'Content-Type': 'application/pdf' });
+      res.end('%PDF-1.4\nfake pdf body');
     } else {
       res.writeHead(404);
       res.end('not found');
@@ -206,5 +210,24 @@ test.describe('TST54 - Download from URL', () => {
     // cleaned strips <style> tags + inline CSS too.
     expect(html).not.toContain('<style');
     expect(html).not.toContain('rebeccapurple');
+  });
+
+  test('TST5424 - PDF from an extension-less URL gets .pdf + convert disabled [electron]', async () => {
+    await openDownloadUrlDialog();
+    await setInputValue(
+      '[data-tid=newUrlTID] input',
+      baseUrl + '/paper/2605.22391',
+    );
+    // The Content-Type probe (debounced) recognizes application/pdf → the
+    // filename gets a .pdf extension and conversion is disabled.
+    await expect(
+      global.client.locator('[data-tid=downloadFileNameTID] input'),
+    ).toHaveValue(/\.pdf$/, { timeout: 10000 });
+    await expect(
+      global.client.locator('[data-tid=downloadFormatMarkdownTID]'),
+    ).toBeDisabled();
+    await expect(
+      global.client.locator('[data-tid=downloadFormatHtmlTID]'),
+    ).toBeDisabled();
   });
 });

@@ -11,6 +11,7 @@ export type Channels =
   | 'isWorkerAvailable'
   | 'fetchUrl'
   | 'fetchUrlBuffer'
+  | 'probeContentType'
   | 'isDirectory'
   | 'resolveRelativePaths'
   | 'set-language'

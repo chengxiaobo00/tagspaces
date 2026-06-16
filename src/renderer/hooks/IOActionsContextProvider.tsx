@@ -143,7 +143,8 @@ type IOActionsContextData = {
       stripStyles?: boolean;
     },
   ) => Promise<TS.FileSystemEntry>;
-  getUrlReaderable: (url: string) => Promise<boolean>;
+  inspectUrl: (url: string) => Promise<{ readerable: boolean; isPdf: boolean }>;
+  probeContentType: (url: string) => Promise<string>;
   downloadFsEntry: (fsEntry: TS.FileSystemEntry) => void;
   uploadFilesAPI: (
     files: Array<any>,
@@ -278,7 +279,8 @@ export const IOActionsContext = createContext<IOActionsContextData>({
   copyFiles: undefined,
   downloadUrl: undefined,
   downloadUrlAs: undefined,
-  getUrlReaderable: undefined,
+  inspectUrl: undefined,
+  probeContentType: undefined,
   downloadFsEntry: undefined,
   uploadFilesAPI: undefined,
   uploadMeta: undefined,
@@ -1202,11 +1204,43 @@ export const IOActionsContextProvider = ({
       );
   }
 
-  /** Fetch a page and report whether Readability treats it as a parseable article. */
-  function getUrlReaderable(url: string): Promise<boolean> {
+  /**
+   * Cheaply probe a URL's Content-Type (headers only) to recognize PDFs/images
+   * served from extension-less URLs (e.g. arxiv.org/pdf/...). Returns '' on
+   * failure or where it isn't supported (web).
+   */
+  function probeContentType(url: string): Promise<string> {
+    if (AppConfig.isElectron) {
+      return window.electronIO.ipcRenderer
+        .invoke('probeContentType', url)
+        .then((res) => (res?.error ? '' : res?.contentType || ''))
+        .catch(() => '');
+    }
+    if (AppConfig.isCapacitor) {
+      // eslint-disable-next-line global-require
+      const ioAPI = require('-/services/io-capacitor');
+      return ioAPI
+        .httpHead(url)
+        .then((res: { contentType?: string }) => res?.contentType || '')
+        .catch(() => '');
+    }
+    return Promise.resolve('');
+  }
+
+  /**
+   * Fetch a page and report whether it's a parseable article (Readability) and
+   * whether the body is actually a PDF (magic bytes) — used to gate the
+   * HTML/Markdown conversion options, which only make sense for real HTML.
+   */
+  function inspectUrl(
+    url: string,
+  ): Promise<{ readerable: boolean; isPdf: boolean }> {
     return fetchPageHtml(url)
-      .then((html) => isHtmlReaderable(html))
-      .catch(() => false);
+      .then((html) => ({
+        isPdf: html.slice(0, 8).startsWith('%PDF-'),
+        readerable: isHtmlReaderable(html),
+      }))
+      .catch(() => ({ readerable: false, isPdf: false }));
   }
 
   function downloadFsEntry(fsEntry: TS.FileSystemEntry) {
@@ -2879,7 +2913,8 @@ export const IOActionsContextProvider = ({
       copyFiles,
       downloadUrl,
       downloadUrlAs,
-      getUrlReaderable,
+      inspectUrl,
+      probeContentType,
       downloadFsEntry,
       uploadFilesAPI,
       uploadFiles,

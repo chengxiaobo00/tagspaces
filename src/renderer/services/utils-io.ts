@@ -895,6 +895,14 @@ export function getDefaultEditor(fileType) {
 export function openUrl(url: string): void {
   if (AppConfig.isElectron) {
     window.electronIO.ipcRenderer.sendMessage('openUrl', url);
+  } else if (AppConfig.isCapacitor) {
+    // A Capacitor WebView can't handle target="_blank" / window.open
+    // reliably — it either swallows the click or navigates the app itself
+    // away. Delegate to the io-capacitor Browser.open path, which opens an
+    // SFSafariViewController (iOS) / Custom Tab (Android) and returns the
+    // user to the app afterwards.
+    const ioAPI = require('-/services/io-capacitor');
+    ioAPI.openUrl(url);
   } else {
     // web or cordova
     openUrlForWeb(url);
@@ -1363,6 +1371,29 @@ const MIME_TYPE_MAP: Readonly<Record<string, string>> = Object.freeze({
 export function getMimeType(extension: string): string | undefined {
   if (!extension) return undefined;
   return MIME_TYPE_MAP[extension.toLowerCase()];
+}
+
+// Reverse of MIME_TYPE_MAP — the canonical (first-listed) extension per MIME
+// type, e.g. image/jpeg → "jpg", text/html → "html".
+const EXTENSION_FOR_MIME_TYPE: Readonly<Record<string, string>> = Object.freeze(
+  Object.entries(MIME_TYPE_MAP).reduce(
+    (acc, [ext, mime]) => {
+      if (!acc[mime]) acc[mime] = ext;
+      return acc;
+    },
+    {} as Record<string, string>,
+  ),
+);
+
+/**
+ * Reverse of getMimeType: a canonical file extension (without leading dot) for a
+ * Content-Type / MIME type, ignoring any "; charset=…" suffix. Returns undefined
+ * for unknown types.
+ */
+export function getExtensionForMimeType(mimeType: string): string | undefined {
+  if (!mimeType) return undefined;
+  const type = mimeType.split(';')[0].trim().toLowerCase();
+  return EXTENSION_FOR_MIME_TYPE[type];
 }
 
 export function toTsLocation(location: CommonLocation): TS.S3Location {

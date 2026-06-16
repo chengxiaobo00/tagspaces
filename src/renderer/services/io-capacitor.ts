@@ -1150,6 +1150,17 @@ function shareFiles(files) {
   });
 }
 
+// Only allow http/https for native HTTP requests (defense-in-depth: reject
+// file:/data:/other schemes before they reach the native plugin).
+function isHttpUrl(url) {
+  try {
+    const { protocol } = new URL(url);
+    return protocol === 'http:' || protocol === 'https:';
+  } catch (e) {
+    return false;
+  }
+}
+
 /**
  * Fetch a remote URL over the native HTTP stack. WKWebView rejects cross-origin
  * fetch() from the capacitor:// origin with "Load failed"; CapacitorHttp runs
@@ -1158,6 +1169,9 @@ function shareFiles(files) {
  * responseType), leaving byte/data-URL conversion to the caller.
  */
 function httpGet(url) {
+  if (!isHttpUrl(url)) {
+    return Promise.reject(new Error('Unsupported URL scheme'));
+  }
   return CapacitorHttp.request({
     url,
     method: 'GET',
@@ -1173,6 +1187,22 @@ function httpGet(url) {
     // Native returns the binary body as a base64 string.
     const base64 = typeof res.data === 'string' ? res.data : '';
     return { base64, contentType };
+  });
+}
+
+/**
+ * Probe a URL's Content-Type via a native HEAD request (CORS-free). Used to
+ * recognize PDFs/images served from extension-less URLs.
+ */
+function httpHead(url) {
+  if (!isHttpUrl(url)) {
+    return Promise.reject(new Error('Unsupported URL scheme'));
+  }
+  return CapacitorHttp.request({ url, method: 'HEAD' }).then((res) => {
+    const headers = res.headers || {};
+    return {
+      contentType: headers['content-type'] || headers['Content-Type'] || '',
+    };
   });
 }
 
@@ -1312,5 +1342,6 @@ export {
   shareFiles,
   downloadFile,
   httpGet,
+  httpHead,
   getNativeFileUrlAsync,
 };
