@@ -133,7 +133,7 @@ test.beforeEach(async ({ isS3, testDataDir }) => {
 });
 
 test.describe('TST54 - Download from URL', () => {
-  test('TST5420 - Download raw file into the location [electron,s3]', async () => {
+  test('TST5420 - Download raw file into the location [electron,s3,_pro]', async () => {
     await openDownloadUrlDialog();
     await setInputValue('[data-tid=newUrlTID] input', baseUrl + '/sample.txt');
     // Default "Original file" format → straight binary download into the
@@ -148,7 +148,7 @@ test.describe('TST54 - Download from URL', () => {
     await expectEntryStartingWith('sample');
   });
 
-  test('TST5421 - Clip an HTML page as Markdown [electron,s3]', async ({
+  test('TST5421 - Clip an HTML page as Markdown [electron,s3,_pro]', async ({
     isS3,
     testDataDir,
   }) => {
@@ -174,7 +174,7 @@ test.describe('TST54 - Download from URL', () => {
     }
   });
 
-  test('TST5422 - Original HTML strips script + link, keeps styles [electron]', async ({
+  test('TST5422 - Original HTML strips script + link, keeps styles [electron,_pro]', async ({
     testDataDir,
   }) => {
     await openDownloadUrlDialog();
@@ -194,7 +194,7 @@ test.describe('TST54 - Download from URL', () => {
     expect(html).toContain('rebeccapurple');
   });
 
-  test('TST5423 - Cleaned HTML also strips styles/CSS [electron]', async ({
+  test('TST5423 - Cleaned HTML also strips styles/CSS [electron,_pro]', async ({
     testDataDir,
   }) => {
     await openDownloadUrlDialog();
@@ -212,7 +212,7 @@ test.describe('TST54 - Download from URL', () => {
     expect(html).not.toContain('rebeccapurple');
   });
 
-  test('TST5424 - PDF from an extension-less URL gets .pdf + convert disabled [electron]', async () => {
+  test('TST5424 - PDF from an extension-less URL gets .pdf + convert disabled [electron,_pro]', async () => {
     await openDownloadUrlDialog();
     await setInputValue(
       '[data-tid=newUrlTID] input',

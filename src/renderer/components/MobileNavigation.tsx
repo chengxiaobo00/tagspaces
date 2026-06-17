@@ -512,30 +512,34 @@ function MobileNavigation(props: Props) {
                       <ListItemText primary={t('core:addFiles')} />
                     </MenuItem>
                     {/* Web can't bypass browser CORS/CSP — only show the URL
-                        download where it saves into the location. */}
-                    {(AppConfig.isElectron || AppConfig.isNativeMobile) && (
-                      <MenuItem
-                        key="newFromDownloadURL"
-                        data-tid="newFromDownloadURLTID"
-                        onClick={() => {
-                          openDownloadUrl();
-                          setOpenCreateMenu(false);
-                          hideDrawer?.();
-                        }}
-                      >
-                        <ListItemIcon>
-                          <DownloadIcon />
-                        </ListItemIcon>
-                        <ListItemText
-                          primary={
-                            <>
-                              {t('core:newFromDownloadURL')}
-                              <BetaLabel />
-                            </>
-                          }
-                        />
-                      </MenuItem>
-                    )}
+                        download where it saves into the location. Pro feature:
+                        enabled on Pro (BETA), disabled with a PRO badge on Lite,
+                        hidden on Lite when Pro teasers are hidden. */}
+                    {(AppConfig.isElectron || AppConfig.isNativeMobile) &&
+                      (Pro || !hideProFeatures) && (
+                        <MenuItem
+                          key="newFromDownloadURL"
+                          data-tid="newFromDownloadURLTID"
+                          disabled={!Pro}
+                          onClick={() => {
+                            openDownloadUrl();
+                            setOpenCreateMenu(false);
+                            hideDrawer?.();
+                          }}
+                        >
+                          <ListItemIcon>
+                            <DownloadIcon />
+                          </ListItemIcon>
+                          <ListItemText
+                            primary={
+                              <>
+                                {t('core:newFromDownloadURL')}
+                                {Pro ? <BetaLabel /> : <ProLabel />}
+                              </>
+                            }
+                          />
+                        </MenuItem>
+                      )}
                     <Divider />
                     <MenuItem
                       key="createNewFolder"

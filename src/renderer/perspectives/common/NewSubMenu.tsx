@@ -226,26 +226,30 @@ function NewSubMenu(props: Props) {
             </MenuItem>
           )}
           {/* Web can't bypass browser CORS/CSP — the download only saves into
-              the location on desktop and native mobile, so hide it elsewhere. */}
-          {(AppConfig.isElectron || AppConfig.isNativeMobile) && (
-            <MenuItem
-              key="newFromDownloadURL"
-              data-tid="newFromDownloadURLTID"
-              onClick={() => run(() => openDownloadUrl())}
-            >
-              <ListItemIcon>
-                <DownloadIcon />
-              </ListItemIcon>
-              <ListItemText
-                primary={
-                  <>
-                    {t('core:newFromDownloadURL')}
-                    <BetaLabel />
-                  </>
-                }
-              />
-            </MenuItem>
-          )}
+              the location on desktop and native mobile, so hide it elsewhere.
+              Pro feature: enabled on Pro (BETA), disabled with a PRO badge on
+              Lite, and hidden entirely on Lite when Pro teasers are hidden. */}
+          {(AppConfig.isElectron || AppConfig.isNativeMobile) &&
+            (Pro || !hideProFeatures) && (
+              <MenuItem
+                key="newFromDownloadURL"
+                data-tid="newFromDownloadURLTID"
+                disabled={!Pro}
+                onClick={() => run(() => openDownloadUrl())}
+              >
+                <ListItemIcon>
+                  <DownloadIcon />
+                </ListItemIcon>
+                <ListItemText
+                  primary={
+                    <>
+                      {t('core:newFromDownloadURL')}
+                      {Pro ? <BetaLabel /> : <ProLabel />}
+                    </>
+                  }
+                />
+              </MenuItem>
+            )}
         </TsMenuList>
       </Menu>
     </>
