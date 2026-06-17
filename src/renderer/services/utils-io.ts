@@ -1085,10 +1085,24 @@ export function openFileMessage(
   filePath: string,
   warningOpeningFilesExternally: boolean,
 ): void {
+  // Decode for display only — the raw filePath is still sent to Electron below.
+  let displayPath = filePath;
+  try {
+    displayPath = decodeURIComponent(filePath);
+  } catch (ex) {
+    // keep the original path if it is not a valid encoded URI
+  }
   if (
     !warningOpeningFilesExternally ||
     // eslint-disable-next-line no-restricted-globals
-    confirm(i18n.t('core:confirmOpenFile', { path: filePath }))
+    confirm(
+      // Native confirm() renders plain text, so disable i18next HTML escaping
+      // (otherwise path separators show up as &#x2F; etc.).
+      i18n.t('core:confirmOpenFile', {
+        path: displayPath,
+        interpolation: { escapeValue: false },
+      }),
+    )
   ) {
     if (AppConfig.isElectron) {
       window.electronIO.ipcRenderer.sendMessage('openFile', filePath);
