@@ -49,6 +49,7 @@ import {
   validateTagGroups,
 } from '-/services/export-import-utils';
 import { prepareTagGroupsForExport } from '-/services/taglibrary-utils';
+import { prepareLocationForExport } from '-/services/locations-transfer';
 import { TS } from '-/tagspaces.namespace';
 import { CommonLocation } from '-/utils/CommonLocation';
 import Box from '@mui/material/Box';
@@ -107,8 +108,8 @@ function ExportImportPanel(props: Props) {
   const { addLocations } = useCurrentLocationContext();
 
   const hasPro = Boolean(Pro && Pro.UI);
-  const sectionIsPro = (s: TransferSection) =>
-    s === 'locations' || s === 'searches';
+  // Locations export/import is a free feature; only saved searches stay Pro.
+  const sectionIsPro = (s: TransferSection) => s === 'searches';
   const sectionEnabled = (s: TransferSection) => !sectionIsPro(s) || hasPro;
 
   // Locations available for export (mirrors the former ExportLocationsDialog).
@@ -352,9 +353,8 @@ function ExportImportPanel(props: Props) {
     }
     const ids = picked[s] || new Set<string>();
     if (s === 'locations') {
-      const prep = Pro?.UI?.prepareLocationForExport;
       const sel = editableLocations.filter((l) => ids.has(l.uuid));
-      return prep ? sel.map((l) => prep(l)) : undefined;
+      return sel.map((l) => prepareLocationForExport(l));
     }
     if (s === 'tagGroups') {
       const sel = (tagGroups || []).filter((g) => ids.has(g.uuid));
