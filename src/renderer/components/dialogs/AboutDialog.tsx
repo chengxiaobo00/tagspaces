@@ -256,14 +256,40 @@ function AboutDialog(props: Props) {
           </TsButton>
         </Typography>
       </DialogContent>
-      <TsDialogActions sx={{ justifyContent: 'space-between' }}>
-        <span>
+      <TsDialogActions
+        // Stacked column uses `gap` for spacing; disable MUI's default
+        // sibling margin-left, which would otherwise nudge the OK button right.
+        disableSpacing={smallScreen}
+        sx={{
+          justifyContent: 'space-between',
+          // On phones the dialog is fullScreen — stack the actions vertically
+          // (full-width) so the long version label can't crowd/truncate, with
+          // the primary OK at the bottom. Desktop keeps the single row.
+          flexDirection: smallScreen ? 'column' : 'row',
+          alignItems: smallScreen ? 'stretch' : 'center',
+          gap: smallScreen ? 1 : 0,
+        }}
+      >
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: smallScreen ? 'column' : 'row',
+            alignItems: smallScreen ? 'stretch' : 'center',
+            gap: smallScreen ? 1 : 0,
+            width: smallScreen ? '100%' : 'auto',
+          }}
+        >
           {!Pro && (
             <TsButton
               data-tid="upgradeToProButton"
               title={t('core:upgradeToProButton')}
+              fullWidth={smallScreen}
               onClick={onUpgradeClick}
-              sx={{ marginRight: AppConfig.defaultSpaceBetweenButtons }}
+              sx={{
+                marginRight: smallScreen
+                  ? 0
+                  : AppConfig.defaultSpaceBetweenButtons,
+              }}
             >
               {t('core:upgradeToProButton')}
             </TsButton>
@@ -271,14 +297,16 @@ function AboutDialog(props: Props) {
           <TsButton
             data-tid="checkForUpdates"
             title={t('core:checkForNewVersion')}
+            fullWidth={smallScreen}
             onClick={checkForUpdates}
           >
             {versionInfo}
           </TsButton>
-        </span>
+        </Box>
         <TsButton
           data-tid="closeAboutDialog"
           variant="contained"
+          fullWidth={smallScreen}
           onClick={onClose}
         >
           {t('core:ok')}
