@@ -41,8 +41,8 @@ import {
   ollamaGetRequest,
   ollamaPostRequest,
   postRequest,
-  readMacOSTags,
 } from './util';
+import { readMacOSTags } from './macUserTags';
 import os from 'os';
 import registerSecureStorageEvents from './secureStorage';
 

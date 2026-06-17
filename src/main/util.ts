@@ -2,7 +2,6 @@
 import { URL } from 'url';
 import path from 'path';
 import { BrowserWindow } from 'electron';
-import { execFile } from 'child_process';
 import http from 'http';
 import settings from './settings';
 
@@ -320,35 +319,6 @@ export function ollamaPostRequest(
       });
     reqPost.write(payload);
     reqPost.end();
-  });
-}
-
-/**
- * @param filename
- * @returns {Promise<TS.Tag[]>}
- */
-export async function readMacOSTags(filename) {
-  return new Promise((resolve, reject) => {
-    const args = ['-raw', '-name', 'kMDItemUserTags', filename];
-    execFile('mdls', args, (error, stdout, stderr) => {
-      if (error) {
-        if (error.code === 1 && !stderr) {
-          return resolve([]);
-        }
-        return reject(error);
-      }
-      if (stderr) return reject(new Error(stderr));
-
-      const text = stdout.trim();
-      if (!text || text === '(null)') {
-        return resolve([]);
-      }
-      const tags = text
-        .replace(/^\(|\)$/g, '')
-        .split(',')
-        .map((item) => ({ title: item.trim() }));
-      resolve(tags);
-    });
   });
 }
 

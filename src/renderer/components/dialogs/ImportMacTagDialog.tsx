@@ -22,6 +22,7 @@ import DialogCloseButton from '-/components/dialogs/DialogCloseButton';
 import TsDialogActions from '-/components/dialogs/components/TsDialogActions';
 import { useProgressDialogContext } from '-/components/dialogs/hooks/useProgressDialogContext';
 import { useCurrentLocationContext } from '-/hooks/useCurrentLocationContext';
+import { useDirectoryContentContext } from '-/hooks/useDirectoryContentContext';
 import { useNotificationContext } from '-/hooks/useNotificationContext';
 import { useTaggingActionsContext } from '-/hooks/useTaggingActionsContext';
 import TsSwitch from '-/components/TsSwitch';
@@ -49,7 +50,8 @@ function ImportMacTagDialog(props: Props) {
     useProgressDialogContext();
   const { showNotification } = useNotificationContext();
   const { currentLocation } = useCurrentLocationContext();
-  const { addTags } = useTaggingActionsContext();
+  const { openCurrentDirectory } = useDirectoryContentContext();
+  const { addTagsToFsEntry } = useTaggingActionsContext();
   const recursive = useRef<boolean>(false);
   const [ignored, forceUpdate] = useReducer((x) => x + 1, 0, undefined);
 
@@ -70,18 +72,29 @@ Do you want to continue?`)
       }*/
       openProgressDialog('importingMacTags');
 
-      const entryCallback = (entry) => {
+      // Persist each file's tags WITHOUT reflecting per file: the walk visits
+      // many entries concurrently and each setReflectActions() replaces the
+      // previous one, so per-file reflects clobber each other (only the last
+      // file would update, and from the walk entry which lacks a thumbPath).
+      // Persist quietly, then refresh the directory once at the end so every
+      // file shows its tags — and its thumbnail.
+      let appliedCount = 0;
+      const entryCallback = (entry) =>
         readMacOSTags(entry.path)
           .then((tags) => {
             if (tags.length > 0) {
-              addTags([entry], tags);
+              appliedCount += 1;
+              // reflect=false → no per-file UI update; collectTags=true keeps
+              // the imported tags in the tag library as before.
+              return addTagsToFsEntry(entry, tags, false, true);
             }
-            return tags;
+            return undefined;
           })
           .catch((err) => {
             console.log('Error creating tags: ' + err);
+            return undefined;
           });
-      };
+
       Pro.MacTagsImport.importTags(
         directoryPath,
         currentLocation.listDirectoryPromise,
@@ -89,8 +102,16 @@ Do you want to continue?`)
         recursive.current,
       )
         .then(() => {
-          closeProgressDialog();
           console.log('Import tags succeeded ' + directoryPath);
+          // Single refresh re-reads the on-disk sidecars (tags) and resolves
+          // thumbnails for the whole directory at once.
+          if (appliedCount > 0) {
+            return openCurrentDirectory();
+          }
+          return true;
+        })
+        .then(() => {
+          closeProgressDialog();
           showNotification(
             'Tags from ' + directoryPath + ' are imported successfully.',
             'default',
