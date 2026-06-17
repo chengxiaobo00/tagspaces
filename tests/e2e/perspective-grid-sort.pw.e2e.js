@@ -12,6 +12,7 @@ import {
   expectElementExist,
   getGridFileName,
   getGridFileSelector,
+  reloadDirectory,
   takeScreenshot,
 } from './general.helpers';
 
@@ -56,7 +57,7 @@ test.beforeEach(async ({ isS3, testDataDir }) => {
 
 // Scenarios for sorting files in grid perspective
 test.describe('TST5003 - Testing sort files in the grid perspective', () => {
-  test('TST10xx - Sort by name [web,s3,electron]', async ({
+  test('TST5050 - Sort by name [web,s3,electron]', async ({
     testDataDir,
   }) => {
     // DESC
@@ -78,7 +79,7 @@ test.describe('TST5003 - Testing sort files in the grid perspective', () => {
     }
   });
 
-  test('TST10xx - Sort by size [web,s3,electron]', async ({
+  test('TST5051 - Sort by size [web,s3,electron]', async ({
     testDataDir,
   }) => {
     await clickOn('[data-tid=gridPerspectiveSortBySize]');
@@ -99,7 +100,7 @@ test.describe('TST5003 - Testing sort files in the grid perspective', () => {
     }
   });
 
-  test('TST10xx - Sort by date [web,s3,electron]', async ({
+  test('TST5052 - Sort by date [web,s3,electron]', async ({
     testDataDir,
   }) => {
     await clickOn('[data-tid=gridPerspectiveSortByDate]');
@@ -121,7 +122,7 @@ test.describe('TST5003 - Testing sort files in the grid perspective', () => {
     }
   });
 
-  test('TST10xx - Sort by extension [web,s3,electron]', async ({
+  test('TST5053 - Sort by extension [web,s3,electron]', async ({
     testDataDir,
   }) => {
     await clickOn('[data-tid=gridPerspectiveSortByExt]');
@@ -140,7 +141,7 @@ test.describe('TST5003 - Testing sort files in the grid perspective', () => {
     }
   });
 
-  test('TST10xx - Sort by tags [web,s3,electron]', async ({
+  test('TST5054 - Sort by tags [web,s3,electron]', async ({
     testDataDir,
   }) => {
     await clickOn('[data-tid=gridPerspectiveSortByFirstTag]');
@@ -153,6 +154,30 @@ test.describe('TST5003 - Testing sort files in the grid perspective', () => {
     await clickOn('[data-tid=gridPerspectiveSortMenu]');
     await clickOn('[data-tid=gridPerspectiveSortByFirstTag]');
     sorted = getDirEntries(testDataDir, 'byFirstTag', false);
+    for (let i = 0; i < sorted.length; i += 1) {
+      const fileName = await getGridFileName(i);
+      expect(fileName).toBe(sorted[i].name);
+    }
+  });
+
+  // Regression guard for the SortedDirContextProvider reset effect (keyed only
+  // on currentDirectory.path): a non-default sort must survive a same-directory
+  // reload — the path the automatic "reload on focus" also uses
+  // (openDirectory(currentDirectoryPath)) — instead of reverting to byName.
+  test('TST5055 - Sort persists after directory reload [web,s3,electron]', async ({
+    testDataDir,
+  }) => {
+    // Pick a non-default criterion (default is byName asc) → size, descending.
+    await clickOn('[data-tid=gridPerspectiveSortBySize]');
+    const sorted = getDirEntries(testDataDir, 'byFileSize', true);
+    for (let i = 0; i < sorted.length; i += 1) {
+      const fileName = await getGridFileName(i);
+      expect(fileName).toBe(sorted[i].name);
+    }
+
+    // Reload the same directory — must keep the chosen sort, not reset it.
+    await reloadDirectory();
+    await expectElementExist(getGridFileSelector('empty_folder'), true, 15000);
     for (let i = 0; i < sorted.length; i += 1) {
       const fileName = await getGridFileName(i);
       expect(fileName).toBe(sorted[i].name);
