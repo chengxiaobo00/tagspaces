@@ -452,50 +452,54 @@ function MobileNavigation(props: Props) {
                       </ListItemIcon>
                       <ListItemText primary={t('core:createLinkFile')} />
                     </MenuItem>
-                    <MenuItem
-                      key="navCreateNewAudio"
-                      data-tid="navCreateNewAudioTID"
-                      disabled={!Pro}
-                      onClick={() => {
-                        openNewAudioDialog();
-                        setOpenCreateMenu(false);
-                        hideDrawer?.();
-                      }}
-                    >
-                      <ListItemIcon>
-                        <AudioFileIcon />
-                      </ListItemIcon>
-                      <ListItemText
-                        primary={
-                          <>
-                            {t('core:newAudioRecording')}
-                            {!Pro && <ProLabel />}
-                          </>
-                        }
-                      />
-                    </MenuItem>
-                    <MenuItem
-                      key="navCreateFileFromTemplate"
-                      data-tid="navCreateFileFromTemplateTID"
-                      disabled={!Pro}
-                      onClick={() => {
-                        openNewFileDialog();
-                        setOpenCreateMenu(false);
-                        hideDrawer?.();
-                      }}
-                    >
-                      <ListItemIcon>
-                        <TemplateFileIcon />
-                      </ListItemIcon>
-                      <ListItemText
-                        primary={
-                          <>
-                            {t('core:createNewFromTemplate')}
-                            {!Pro && <ProLabel />}
-                          </>
-                        }
-                      />
-                    </MenuItem>
+                    {(Pro || !hideProFeatures) && (
+                      <MenuItem
+                        key="navCreateNewAudio"
+                        data-tid="navCreateNewAudioTID"
+                        disabled={!Pro}
+                        onClick={() => {
+                          openNewAudioDialog();
+                          setOpenCreateMenu(false);
+                          hideDrawer?.();
+                        }}
+                      >
+                        <ListItemIcon>
+                          <AudioFileIcon />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={
+                            <>
+                              {t('core:newAudioRecording')}
+                              {!Pro && <ProLabel />}
+                            </>
+                          }
+                        />
+                      </MenuItem>
+                    )}
+                    {(Pro || !hideProFeatures) && (
+                      <MenuItem
+                        key="navCreateFileFromTemplate"
+                        data-tid="navCreateFileFromTemplateTID"
+                        disabled={!Pro}
+                        onClick={() => {
+                          openNewFileDialog();
+                          setOpenCreateMenu(false);
+                          hideDrawer?.();
+                        }}
+                      >
+                        <ListItemIcon>
+                          <TemplateFileIcon />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={
+                            <>
+                              {t('core:createNewFromTemplate')}
+                              {!Pro && <ProLabel />}
+                            </>
+                          }
+                        />
+                      </MenuItem>
+                    )}
                     <Divider />
                     <MenuItem
                       key="addUploadFiles"
