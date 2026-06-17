@@ -372,15 +372,19 @@ function DownloadUrlDialog(props: Props) {
     const baseName =
       sanitizeDownloadFileName(fileName) ||
       `download${extForFormat(saveFormat, originalExt)}`;
+    const dirSeparator = currentLocation?.getDirSeparator() || '/';
     const finalName = generateFileName(
       baseName,
       tagTitles,
       tagDelimiter,
-      currentLocation?.getDirSeparator(),
+      dirSeparator,
       prefixTagContainer,
       filenameTagPlacedAtEnd,
     );
-    const targetPath = `${targetDirectoryPath}/${finalName}`;
+    // Join with the location's separator (not a hardcoded `/`): on Windows local
+    // `targetDirectoryPath` uses `\`, and a mixed-separator path breaks the
+    // post-download reflect/add match so the new file wouldn't appear.
+    const targetPath = `${targetDirectoryPath}${dirSeparator}${finalName}`;
 
     const reflectOpen = (entry: TS.FileSystemEntry) => {
       setReflectActions({
