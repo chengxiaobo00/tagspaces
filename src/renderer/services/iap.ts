@@ -360,3 +360,64 @@ export async function presentCodeRedemption(): Promise<void> {
 }
 
 export const ProProductId = PRO_PRODUCT_ID;
+
+// Debug helper for verifying the IAP wiring on-device without going through
+// the Buy Pro dialog. Exposed on window so it's reachable from the Safari /
+// Chrome WebView inspector console:
+//
+//   await window.__tsIap.dump()
+//   → { available, isUnlocked, product, ownedRaw }
+if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+  (window as any).__tsIap = {
+    isAvailable: isIapAvailable,
+    isUnlocked: isProUnlockedSync,
+    product: getProProduct,
+    init: initializeIap,
+    restore: restoreProPurchase,
+    productId: PRO_PRODUCT_ID,
+    async dump() {
+      await initializeIap().catch(() => {});
+      const mod = await loadPlugin();
+      const store = mod?.store;
+      const product = await getProProduct().catch((e) => ({
+        error: String(e),
+      }));
+      let ownedRaw: any = undefined;
+      try {
+        ownedRaw = store?.owned?.(PRO_PRODUCT_ID);
+      } catch (e) {
+        ownedRaw = { error: String(e) };
+      }
+      // The CdvPurchase store may finish initialize() before all products
+      // have been fetched from the platform. Expose the live state so we
+      // can tell "products didn't load" from "wrong product id" from
+      // "SKU status not Ready to Submit".
+      const products =
+        store?.products?.map?.((p: any) => ({
+          id: p.id,
+          platform: p.platform,
+          type: p.type,
+          title: p.title,
+          description: p.description,
+          canPurchase: p.canPurchase,
+          owned: p.owned,
+          offerCount: p.offers?.length ?? 0,
+          firstPrice: p.offers?.[0]?.pricingPhases?.[0]?.price ?? null,
+        })) ?? null;
+      const summary = {
+        available: isIapAvailable(),
+        isUnlocked: isProUnlockedSync(),
+        product,
+        ownedRaw,
+        productId: PRO_PRODUCT_ID,
+        storeReady: store?.ready,
+        storeProductsCount: store?.products?.length ?? 0,
+        storeProducts: products,
+        storeErrors: store?.errors ?? null,
+        platform: (window as any).Capacitor?.getPlatform?.(),
+      };
+      console.log('[iap] dump:', summary);
+      return summary;
+    },
+  };
+}
