@@ -74,7 +74,15 @@ function AboutDialog(props: Props) {
 
   function checkForUpdates() {
     if (updateAvailable) {
-      openURLExternally(Links.links.downloadURL, true);
+      // On mobile the app is updated through the store, so route there
+      // instead of the desktop downloads page.
+      if (AppConfig.isCapacitoriOS || AppConfig.isCordovaiOS) {
+        openURLExternally(Links.links.appStoreApp, true);
+      } else if (AppConfig.isCapacitorAndroid || AppConfig.isCordovaAndroid) {
+        openURLExternally(Links.links.playStoreApp, true);
+      } else {
+        openURLExternally(Links.links.downloadURL, true);
+      }
     } else {
       getLastVersionPromise()
         .then((lastVersion) => {

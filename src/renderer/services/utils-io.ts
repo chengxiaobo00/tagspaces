@@ -472,14 +472,36 @@ export function getLastVersionPromise(signal?: AbortSignal): Promise<string> {
 
     let versionFile = 'tagspaces.json';
     const proText = Pro ? 'pro-' : '';
+    // Desktop architecture suffix. process.arch isn't reachable in the
+    // sandboxed renderer, so the preload bridge exposes it as
+    // window.electronIO.arch ('arm64' | 'x64' | …). Apple Silicon / Windows
+    // on ARM / ARM Linux get the -arm64 descriptor; everything else keeps
+    // the existing x64 (and bare 'mac') names.
+    const isArm64 =
+      typeof window !== 'undefined' &&
+      (window as any).electronIO?.arch === 'arm64';
+    // Native mobile must be matched BEFORE the desktop OS branches: the iOS
+    // WebView UA matches isMacLike (iPhone/iPad) and the Android WebView UA
+    // contains "Linux", so leaving them last makes iOS resolve to the macOS
+    // descriptor and Android to the Linux one (the isAndroid branch was dead).
     if (AppConfig.isWeb) {
       versionFile = 'tagspaces-pro-web.json';
+    } else if (AppConfig.isCapacitoriOS || AppConfig.isCordovaiOS) {
+      versionFile = 'tagspaces-' + proText + 'ios.json';
+    } else if (AppConfig.isCapacitorAndroid || AppConfig.isCordovaAndroid) {
+      versionFile = 'tagspaces-' + proText + 'android.json';
     } else if (AppConfig.isWin) {
-      versionFile = 'tagspaces-' + proText + 'win-x64.json';
+      versionFile =
+        'tagspaces-' + proText + (isArm64 ? 'win-arm64' : 'win-x64') + '.json';
     } else if (AppConfig.isMacLike) {
-      versionFile = 'tagspaces-' + proText + 'mac.json';
+      versionFile =
+        'tagspaces-' + proText + (isArm64 ? 'mac-arm64' : 'mac') + '.json';
     } else if (AppConfig.isLinux) {
-      versionFile = 'tagspaces-' + proText + 'linux-x64.json';
+      versionFile =
+        'tagspaces-' +
+        proText +
+        (isArm64 ? 'linux-arm64' : 'linux-x64') +
+        '.json';
     } else if (AppConfig.isAndroid) {
       versionFile = 'tagspaces-' + proText + 'android.json';
     }

@@ -124,6 +124,10 @@ const electronHandler = {
       return webUtils.getPathForFile(file);
     },
   },
+  // CPU architecture of the running Electron binary ('arm64' | 'x64' | …).
+  // process isn't available in the sandboxed renderer, so surface it here
+  // for arch-specific logic like picking the update descriptor file.
+  arch: process.arch,
 };
 
 contextBridge.exposeInMainWorld('electronIO', electronHandler);
