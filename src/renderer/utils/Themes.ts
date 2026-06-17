@@ -54,6 +54,14 @@ export const createTSTheme = (themeName: string, isDark: boolean = false) => {
             [theme.breakpoints.down('md')]: {
               borderRadius: AppConfig.defaultCSSRadius,
             },
+            // FullScreen dialogs (mobile) cover the whole viewport including the
+            // notch, but never inset their top. Push the content below the notch
+            // using the --sat variable (kept correct by io-capacitor's recovery
+            // on iOS, so it survives the WKWebView env() collapse after the
+            // in-app browser). On web/desktop --sat resolves to 0 — no-op.
+            '&.MuiDialog-paperFullScreen': {
+              paddingTop: 'var(--sat, env(safe-area-inset-top, 0px))',
+            },
           }),
         },
       },

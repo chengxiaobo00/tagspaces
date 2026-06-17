@@ -213,6 +213,13 @@ function MobileNavigation(props: Props) {
         overflow: 'hidden',
         width: widthValue,
         maxWidth: widthValue,
+        // The drawer paper is position:fixed at the viewport top, so it ignores
+        // the body's safe-area padding and would render under the notch. Inset
+        // it ourselves. Use the --sat variable (kept correct by io-capacitor's
+        // recovery on iOS) rather than env() directly, so it survives the
+        // WKWebView env(safe-area-inset-top) collapse after the in-app browser.
+        paddingTop: 'var(--sat, env(safe-area-inset-top, 0px))',
+        boxSizing: 'border-box',
       }}
     >
       <Box

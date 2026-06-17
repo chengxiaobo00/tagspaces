@@ -132,11 +132,92 @@ async function setupStatusBar() {
   }
 }
 
+// Last known-good top safe-area inset (notch height, px), captured while the
+// WebView reports it correctly, so we can restore it after the iOS bug below.
+let lastGoodSafeAreaTop = 0;
+
+// Measure the live env(safe-area-inset-top) in px via a hidden probe element.
+function readSafeAreaInsetTop() {
+  try {
+    const probe = document.createElement('div');
+    probe.style.cssText =
+      'position:fixed;top:0;left:0;width:0;height:env(safe-area-inset-top);' +
+      'visibility:hidden;pointer-events:none;';
+    document.body.appendChild(probe);
+    const h = probe.getBoundingClientRect().height;
+    probe.remove();
+    return h;
+  } catch (e) {
+    return 0;
+  }
+}
+
+// Remember the inset while it is valid so we can restore it later (iOS only).
+function captureSafeAreaInset() {
+  if (Capacitor.getPlatform() !== 'ios') {
+    return;
+  }
+  const top = readSafeAreaInsetTop();
+  if (top > 0) {
+    lastGoodSafeAreaTop = top;
+  }
+}
+
+// iOS only. WKWebView reports env(safe-area-inset-*) as 0 after the Capacitor
+// in-app browser (SFSafariViewController) is dismissed, which collapses the
+// body's safe-area padding (see index.html) so the top toolbar slides under the
+// notch. Recovery is two-pronged: (1) toggle `viewport-fit` to nudge WebKit
+// into recomputing env(), then (2) if it is still collapsed, deterministically
+// write the cached inset into the --sat CSS variable that index.html's body
+// padding (and the drawer / fullScreen dialogs) read.
+function forceSafeAreaRecalc() {
+  try {
+    if (Capacitor.getPlatform() !== 'ios') {
+      return;
+    }
+    const vp = document.querySelector('meta[name="viewport"]');
+    const content = vp ? vp.getAttribute('content') || '' : '';
+    if (vp && content.indexOf('viewport-fit=cover') !== -1) {
+      // Drop `cover` + force a synchronous reflow so WebKit discards the cached
+      // (collapsed) insets, then restore `cover` next frame to recompute env().
+      vp.setAttribute(
+        'content',
+        content.replace('viewport-fit=cover', 'viewport-fit=contain'),
+      );
+      void document.body.offsetHeight;
+      requestAnimationFrame(() => {
+        vp.setAttribute('content', content);
+        void document.body.offsetHeight;
+      });
+    }
+    // After the nudge, verify the inset recovered; if not, restore it from the
+    // cached value so the top UI stays clear of the notch regardless.
+    requestAnimationFrame(() => {
+      const top = readSafeAreaInsetTop();
+      if (top > 0) {
+        lastGoodSafeAreaTop = top;
+        document.documentElement.style.removeProperty('--sat');
+      } else if (lastGoodSafeAreaTop > 0) {
+        document.documentElement.style.setProperty(
+          '--sat',
+          lastGoodSafeAreaTop + 'px',
+        );
+      }
+    });
+  } catch (e) {
+    console.warn('forceSafeAreaRecalc failed:', e);
+  }
+}
+
 async function onDeviceReady() {
   console.log('Capacitor Device Ready: ' + Capacitor.getPlatform());
 
   // Configure status bar — ensure WebView does not render behind it
   await setupStatusBar();
+
+  // Cache the notch inset once layout has settled, so we can restore it after
+  // the iOS in-app browser collapses env(safe-area-inset-top) on return.
+  setTimeout(captureSafeAreaInset, 1000);
 
   // Enable background mode
   if (BackgroundMode) {
@@ -234,6 +315,15 @@ async function onDeviceReady() {
   App.addListener('resume', () => {
     onDeviceResume();
   });
+
+  // iOS: closing the in-app browser (SFSafariViewController) collapses
+  // env(safe-area-inset-top), pushing the UI under the notch. Recompute the
+  // safe area on return — immediately and again once the dismissal animation
+  // has settled (an early-only pass can run while env() is still collapsed).
+  Browser.addListener('browserFinished', () => {
+    forceSafeAreaRecalc();
+    setTimeout(forceSafeAreaRecalc, 350);
+  });
 }
 
 function onDeviceBackButton(e) {
@@ -245,6 +335,10 @@ function handleOpenURL(url) {
 }
 
 function onDeviceResume() {
+  // Returning from the background can also leave iOS env(safe-area-inset-top)
+  // collapsed (same WKWebView bug as the in-app browser), so recompute the
+  // safe area here too. No-op on Android.
+  forceSafeAreaRecalc();
   // TODO: reload current dir after background operation
 }
 
