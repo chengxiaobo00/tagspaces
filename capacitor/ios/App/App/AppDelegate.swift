@@ -33,12 +33,19 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // locks, paired with UIBackgroundModes=audio in Info.plist) and voice-memo
         // recording. .defaultToSpeaker routes playback through the main speaker
         // instead of the earpiece; .allowBluetoothA2DP keeps stereo headphones.
+        //
+        // We configure the category at launch but deliberately DO NOT call
+        // setActive(true) here. Activating an exclusive (.playAndRecord) session
+        // at launch immediately interrupts other apps' audio — it stopped
+        // CarPlay/music the moment TagSpaces was opened, before playing anything.
+        // The system activates the session on demand when WebView audio actually
+        // starts (or a voice note records), so TagSpaces takes over only when it
+        // really plays, and other audio resumes once it stops.
         do {
             let session = AVAudioSession.sharedInstance()
             try session.setCategory(.playAndRecord,
                                     mode: .default,
                                     options: [.defaultToSpeaker, .allowBluetoothA2DP])
-            try session.setActive(true)
         } catch {
             CAPLog.print("Failed to configure AVAudioSession: \(error)")
         }
