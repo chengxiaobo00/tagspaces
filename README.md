@@ -151,7 +151,7 @@ TagSpaces supports extension modules for opening and editing different file type
 
 ### 🤝 Contributing
 
-We welcome contributions! Please review and sign the [Contributor License Agreement (CLA)](https://www.tagspaces.org/contribute/) before submitting PRs.
+We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md), and review and sign the [Contributor License Agreement (CLA)](https://www.tagspaces.org/content/tagspaces-cla-v2.pdf) before submitting PRs.
 
 ## 🌍 Localization
 
@@ -177,3 +177,5 @@ TagSpaces is not optimized for locations with more than 100,000 files.
 ## 📄 License
 
 TagSpaces is dual-licensed under the [AGPL](LICENSE.txt) (GNU Affero General Public License) v3 for open-source projects and a commercial license for vendors or resellers. Contact us if you're interested in using TagSpaces under different terms.
+
+The TagSpaces Pro components (`tagspacespro/`) are proprietary and governed by a separate EULA. For the full picture — the open-source/proprietary boundary, how the combined builds are distributed, and third-party notices — see [LICENSING.md](LICENSING.md).

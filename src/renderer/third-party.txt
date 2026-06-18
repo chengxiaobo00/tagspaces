@@ -2408,7 +2408,7 @@ MIT License
 
 The following npm package may be included in this product:
 
- - @tagspacespro/tagspacespro@5.0.248
+ - @tagspacespro/tagspacespro@5.0.249
 
 This package contains the following license:
 
@@ -6518,6 +6518,7 @@ The following npm packages may be included in this product:
  - @capacitor/app@8.1.0
  - @capacitor/device@8.0.2
  - @capacitor/splash-screen@8.0.1
+ - @capacitor/status-bar@8.0.2
 
 These packages each contain the following license:
 
@@ -8718,6 +8719,7 @@ The following npm packages may be included in this product:
  - @react-dnd/invariant@4.0.2
  - @react-dnd/shallowequal@4.0.2
  - @tokenizer/token@0.3.0
+ - capacitor-plugin-cdv-purchase@13.17.1
  - html-parse-stringify@3.0.1
  - isarray@1.0.0
  - leaflet.markercluster@1.5.3
@@ -12402,7 +12404,7 @@ SOFTWARE.
 
 The following npm package may be included in this product:
 
- - @tagspaces/extensions@1.0.251
+ - @tagspaces/extensions@1.0.253
 
 This package contains the following license:
 
