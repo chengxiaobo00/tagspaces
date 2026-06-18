@@ -11,7 +11,6 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "@anuradev/capacitor-background-mode": "7.2.1",
     "@capacitor-community/file-opener": "8.0.0",
     "@capacitor/android": "8.3.0",
     "@capacitor/app": "8.1.0",

@@ -7,6 +7,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import com.getcapacitor.BridgeActivity;
 import org.tagspaces.plugins.IntentHandlerPlugin;
+import org.tagspaces.plugins.MediaKeepAlivePlugin;
 import org.tagspaces.plugins.StoragePermissionPlugin;
 
 public class MainActivity extends BridgeActivity {
@@ -14,6 +15,7 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(StoragePermissionPlugin.class);
         registerPlugin(IntentHandlerPlugin.class);
+        registerPlugin(MediaKeepAlivePlugin.class);
         super.onCreate(savedInstanceState);
         insetWebViewFromSystemBars();
     }

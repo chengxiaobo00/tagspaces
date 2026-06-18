@@ -35,14 +35,6 @@ try {
   console.warn('FileOpener plugin not available');
 }
 
-let BackgroundMode;
-try {
-  BackgroundMode =
-    require('@anuradev/capacitor-background-mode').BackgroundMode;
-} catch (e) {
-  console.warn('BackgroundMode plugin not available');
-}
-
 let FilePicker;
 try {
   FilePicker = require('@capawesome/capacitor-file-picker').FilePicker;
@@ -54,6 +46,10 @@ try {
 const { registerPlugin } = require('@capacitor/core');
 const StoragePermission = registerPlugin('StoragePermission');
 const IntentHandler = registerPlugin('IntentHandler');
+// Android-only: foreground service that keeps WebView audio playing in the
+// background (see MediaKeepAlivePlugin.java). On iOS background audio is handled
+// by UIBackgroundModes "audio" in Info.plist.
+const MediaKeepAlive = registerPlugin('MediaKeepAlive');
 // iOS-only: bridges FileManager.url(forUbiquityContainerIdentifier:) (see ICloudPlugin.swift)
 const ICloud = registerPlugin('ICloud');
 
@@ -219,12 +215,13 @@ async function onDeviceReady() {
   // the iOS in-app browser collapses env(safe-area-inset-top) on return.
   setTimeout(captureSafeAreaInset, 1000);
 
-  // Enable background mode
-  if (BackgroundMode) {
+  // Keep WebView audio playing while the app is backgrounded. Android starts a
+  // mediaPlayback foreground service; iOS relies on UIBackgroundModes "audio".
+  if (Capacitor.getPlatform() === 'android') {
     try {
-      BackgroundMode.enable();
+      await MediaKeepAlive.enable();
     } catch (e) {
-      console.warn('BackgroundMode enable failed:', e);
+      console.warn('MediaKeepAlive enable failed:', e);
     }
   }
 
