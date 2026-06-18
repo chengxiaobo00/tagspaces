@@ -65,8 +65,24 @@ export const LicenseDialogContextProvider = ({
   // (defaults to true) and manual resets (Settings → Restore Defaults clears
   // localStorage, reload re-applies defaults). Reactive — works regardless
   // of redux-persist rehydration timing.
+  //
+  // Native mobile (App Store / Play Store) is the exception: the store handles
+  // the EULA, the AGPL doesn't require end-user acceptance to run a copy
+  // (AGPLv3 §9), and a first-run accept/quit gate (with a self-terminating
+  // "Quit") is discouraged by — and risks rejection under — store review
+  // guidelines. So we skip the gate there: clear firstRun and hand off to
+  // onboarding directly. The license stays available via About → License.
   useEffect(() => {
-    if (firstRun) setOpen(true);
+    if (!firstRun) return;
+    if (AppConfig.isNativeMobile) {
+      dispatch(SettingsActions.setFirstRun(false));
+      if (!onboardingCompleted && openOnboardingDialog) {
+        openOnboardingDialog();
+      }
+    } else {
+      setOpen(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [firstRun]);
 
   useEffect(() => {
