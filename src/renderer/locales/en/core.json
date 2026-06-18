@@ -1146,6 +1146,7 @@
   "imprint": "Imprint",
   "privacyPolicy": "Privacy Policy",
   "changelog": "Changelog",
+  "sourceCode": "Source Code",
   "coreExtensionsTooltip": "These are extensions which are packaged with the current version of the app",
   "globalShortcutsTooltip": "Enables global shortcut for creating new files, file navigation, play/pause audio files or opening the search. Global shortcuts are working even if the app window is not currently in focus or visible.",
   "devModeTooltip": "Will enable some experimental features and turn on extra debugging",

@@ -254,6 +254,16 @@ function AboutDialog(props: Props) {
           >
             {t('core:license')}
           </TsButton>
+          <TsButton
+            sx={{ marginRight: AppConfig.defaultSpaceBetweenButtons }}
+            variant="text"
+            data-tid="openSourceCode"
+            onClick={() => {
+              openURLExternally(Links.links.sourceCodeURL, true);
+            }}
+          >
+            {t('core:sourceCode')}
+          </TsButton>
         </Typography>
       </DialogContent>
       <TsDialogActions
