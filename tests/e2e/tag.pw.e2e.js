@@ -453,7 +453,12 @@ test.describe('TST04 - Testing the tag library:', () => {
     //TODO check in tsl.json content
   });
 
-  test('TST0427 - Load tag groups from location after app restart [web,s3,electron,_pro]', async ({
+  // Not tagged `web`: the web build intentionally blacklists the `locations`
+  // redux slice from persistence (locations may hold S3 credentials — see
+  // reducers/index.ts), so locations don't survive a reload there and the
+  // "load location tag groups after restart" scenario can't apply. Electron
+  // persists locations, so the restart guard is exercised on electron-s3.
+  test('TST0427 - Load tag groups from location after app restart [s3,electron,_pro]', async ({
     isS3,
     testDataDir,
   }) => {
@@ -497,7 +502,10 @@ test.describe('TST04 - Testing the tag library:', () => {
     );
   });
 
-  test('TST0428 - Created location tag group survives app restart [web,s3,electron,_pro]', async ({
+  // Not tagged `web` for the same reason as TST0427: locations are not
+  // persisted in the browser, so a location tag group can't reappear after a
+  // web reload. Restart persistence is verified on electron-s3.
+  test('TST0428 - Created location tag group survives app restart [s3,electron,_pro]', async ({
     isS3,
     testDataDir,
   }) => {
