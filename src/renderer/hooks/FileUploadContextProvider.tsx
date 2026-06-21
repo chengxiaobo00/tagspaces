@@ -23,6 +23,7 @@ import FileUploadContainer, {
 
 type FileUploadContextData = {
   openFileUpload: (dPath: string) => void;
+  openCameraCapture: (dPath: string) => void;
   uploadMeta: () => void;
   setMetaUpload: (mUpload: () => void) => void;
   transferMeta: boolean;
@@ -30,6 +31,7 @@ type FileUploadContextData = {
 
 export const FileUploadContext = createContext<FileUploadContextData>({
   openFileUpload: undefined,
+  openCameraCapture: undefined,
   uploadMeta: undefined,
   setMetaUpload: undefined,
   transferMeta: false,
@@ -49,6 +51,10 @@ export const FileUploadContextProvider = ({
     fileUploadContainerRef.current?.onFileUpload(dPath);
   }
 
+  function openCameraCapture(dPath: string) {
+    fileUploadContainerRef.current?.onCameraCapture(dPath);
+  }
+
   function uploadMeta() {
     fileUploadContainerRef.current?.onMetaUpload();
     setTransferMeta(false);
@@ -62,6 +68,7 @@ export const FileUploadContextProvider = ({
   const context = useMemo(() => {
     return {
       openFileUpload: openFileUpload,
+      openCameraCapture: openCameraCapture,
       uploadMeta: uploadMeta,
       setMetaUpload: setMetaUpload,
       transferMeta,

@@ -26,6 +26,7 @@ import {
   NewFileIcon,
   NewFolderIcon,
   SmallArrowRightIcon,
+  TakePictureIcon,
   TemplateFileIcon,
 } from '-/components/CommonIcons';
 import { useDownloadUrlDialogContext } from '-/components/dialogs/hooks/useDownloadUrlDialogContext';
@@ -50,6 +51,7 @@ interface Props {
   createNewAudio?: () => void;
   showCreateDirectoryDialog?: () => void;
   addExistingFile?: () => void;
+  cameraTakePicture?: () => void;
 }
 
 /**
@@ -67,6 +69,7 @@ function NewSubMenu(props: Props) {
     createNewAudio,
     showCreateDirectoryDialog,
     addExistingFile,
+    cameraTakePicture,
   } = props;
   const hideProFeatures: boolean = useSelector(isHideProFeatures);
   const { openDownloadUrl } = useDownloadUrlDialogContext();
@@ -223,6 +226,21 @@ function NewSubMenu(props: Props) {
                 <AddExistingFileIcon />
               </ListItemIcon>
               <ListItemText primary={t('core:addFiles')} />
+            </MenuItem>
+          )}
+          {/* Native mobile only: the WebView file chooser can't open the
+              camera, so this is a dedicated trigger for the Capacitor camera
+              plugin. Only wired in on Capacitor (see DirectoryMenu). */}
+          {cameraTakePicture && (
+            <MenuItem
+              key="cameraTakePicture"
+              data-tid="cameraTakePictureTID"
+              onClick={() => run(() => cameraTakePicture())}
+            >
+              <ListItemIcon>
+                <TakePictureIcon />
+              </ListItemIcon>
+              <ListItemText primary={t('core:cameraTakePicture')} />
             </MenuItem>
           )}
           {/* Web can't bypass browser CORS/CSP — the download only saves into

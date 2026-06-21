@@ -42,6 +42,13 @@ try {
   console.warn('FilePicker plugin not available');
 }
 
+let Camera, CameraResultType, CameraSource;
+try {
+  ({ Camera, CameraResultType, CameraSource } = require('@capacitor/camera'));
+} catch (e) {
+  console.warn('Camera plugin not available');
+}
+
 // Custom plugins registered in MainActivity
 const { registerPlugin } = require('@capacitor/core');
 const StoragePermission = registerPlugin('StoragePermission');
@@ -1186,6 +1193,54 @@ function selectDirectoryDialog() {
   return Promise.reject('FilePicker plugin not available');
 }
 
+/**
+ * Open the native camera to take a photo. The system file chooser that backs
+ * `<input type="file">` in the Capacitor WebView can't reach the camera as a
+ * capture source, so this is the dedicated "take a picture" trigger the file
+ * picker is missing. Returns a browser File (image/<format>) that the caller
+ * feeds through the normal uploadFilesAPI pipeline — its isNativeMobile branch
+ * tags the generic name with a capture timestamp so repeated shots don't
+ * collide. Resolves null when the user cancels the camera.
+ */
+function takePicture() {
+  if (!Camera) {
+    return Promise.reject('Camera plugin not available');
+  }
+  return Camera.getPhoto({
+    source: CameraSource.Camera,
+    resultType: CameraResultType.DataUrl,
+    quality: 90,
+    saveToGallery: false,
+    // A file manager wants the full frame — cropping is for avatar pickers.
+    allowEditing: false,
+  })
+    .then((photo) => {
+      if (!photo || !photo.dataUrl) {
+        return null;
+      }
+      const format = photo.format || 'jpeg';
+      // Let the WebView decode the data URL into bytes — fetch() handles
+      // base64 natively, sidestepping the manual base64→Blob conversion.
+      return fetch(photo.dataUrl)
+        .then((res) => res.blob())
+        .then(
+          (blob) =>
+            new File([blob], 'image.' + format, {
+              type: blob.type || 'image/' + format,
+            }),
+        );
+    })
+    .catch((err) => {
+      // The plugin throws "User cancelled photos app" when the camera is
+      // dismissed — treat that as a no-op rather than surfacing an error.
+      const msg = err && err.message ? err.message : String(err);
+      if (msg.toLowerCase().includes('cancel')) {
+        return null;
+      }
+      throw err;
+    });
+}
+
 function openDirectory(dirPath) {
   console.warn('function openDirectory not supported on Capacitor mobile');
 }
@@ -1426,6 +1481,7 @@ export {
   selectDirectory,
   selectFile,
   selectDirectoryDialog,
+  takePicture,
   openDirectory,
   openFile,
   openUrl,

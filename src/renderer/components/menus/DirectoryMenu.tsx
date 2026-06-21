@@ -90,7 +90,7 @@ function DirectoryMenu(props: Props) {
     useCurrentLocationContext();
   const { setThumbnailImageChange, getMetadataID } = useIOActionsContext();
   const { showNotification } = useNotificationContext();
-  const { openFileUpload } = useFileUploadContext();
+  const { openFileUpload, openCameraCapture } = useFileUploadContext();
   const { openCreateDirectoryDialog } = useCreateDirectoryDialogContext();
   const {
     openDirectory,
@@ -267,6 +267,14 @@ function DirectoryMenu(props: Props) {
     openFileUpload(directoryPath);
   }
 
+  // The WebView file chooser behind "Add files" can't open the camera on
+  // mobile, so on Capacitor we offer a dedicated "Take picture" entry that
+  // drives the native camera plugin and feeds the photo into the same upload
+  // pipeline.
+  function cameraTakePicture() {
+    openCameraCapture(directoryPath);
+  }
+
   function importMacTags() {
     openImportMacTagDialog(directoryPath);
   }
@@ -372,7 +380,7 @@ function DirectoryMenu(props: Props) {
         importMacTags,
         switchPerspectives ? perspectiveSwitch : undefined,
         showProperties,
-        undefined, // cameraTakePicture removed — was using Cordova-only navigator.camera API
+        AppConfig.isCapacitor ? cameraTakePicture : undefined,
         showAddRemoveTagsDialog,
         openInNewWindow,
         changeFolderThumbnail,

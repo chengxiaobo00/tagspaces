@@ -1368,6 +1368,19 @@ export function selectDirectoryDialog(): Promise<any> {
   return Promise.reject(new Error('selectDirectoryDialog: not implemented'));
 }
 
+/**
+ * Capture a photo with the native camera and return it as a browser File.
+ * Capacitor-only: the WebView's file chooser can't open the camera directly,
+ * so this provides the missing capture trigger. Resolves null on cancel.
+ */
+export function takePicture(): Promise<File | null> {
+  if (AppConfig.isCapacitor) {
+    const ioAPI = require('-/services/io-capacitor');
+    return ioAPI.takePicture();
+  }
+  return Promise.reject(new Error('takePicture: not implemented'));
+}
+
 export function removePrefix(
   str: string | null | undefined,
   prefix: string | null | undefined,

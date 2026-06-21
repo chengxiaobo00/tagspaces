@@ -246,7 +246,8 @@ export function getDirectoryMenuItems(
     (createNewFile ||
       createNewAudio ||
       showCreateDirectoryDialog ||
-      addExistingFile)
+      addExistingFile ||
+      cameraTakePicture)
   ) {
     menuItems.push(
       <NewSubMenu
@@ -257,6 +258,7 @@ export function getDirectoryMenuItems(
         createNewAudio={createNewAudio}
         showCreateDirectoryDialog={showCreateDirectoryDialog}
         addExistingFile={addExistingFile}
+        cameraTakePicture={cameraTakePicture}
       />,
     );
   }

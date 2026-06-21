@@ -21,6 +21,7 @@ import { useCurrentLocationContext } from '-/hooks/useCurrentLocationContext';
 import { useEditedEntryMetaContext } from '-/hooks/useEditedEntryMetaContext';
 import { useIOActionsContext } from '-/hooks/useIOActionsContext';
 import { actions as AppActions, AppDispatch } from '-/reducers/app';
+import { takePicture } from '-/services/utils-io';
 import { TS } from '-/tagspaces.namespace';
 import {
   ChangeEvent,
@@ -38,6 +39,7 @@ interface Props {
 
 export interface FileUploadContainerRef {
   onFileUpload: (directoryPath: string) => void;
+  onCameraCapture: (directoryPath: string) => void;
   onMetaUpload: () => void;
   setMetaUpload: (mUpload: () => void) => void;
 }
@@ -70,6 +72,22 @@ const FileUploadContainer = forwardRef(
         directoryPath.current = dirPath;
         fileInput.current.click();
       },
+      // Capacitor-only: the WebView file chooser can't open the camera, so this
+      // captures a photo via the native camera plugin and runs it through the
+      // same upload pipeline as a picked file.
+      onCameraCapture(dirPath: string) {
+        directoryPath.current = dirPath;
+        takePicture()
+          .then((file) => {
+            if (file) {
+              uploadFiles([file]);
+            }
+            return true;
+          })
+          .catch((error) => {
+            console.log('takePicture', error);
+          });
+      },
     }));
 
     const fileInput = useRef<HTMLInputElement>(null);
@@ -77,12 +95,16 @@ const FileUploadContainer = forwardRef(
     function handleFileInputChange(selection: ChangeEvent<HTMLInputElement>) {
       // console.log("Selected File: "+JSON.stringify(selection.currentTarget.files[0]));
       // const file = selection.currentTarget.files[0];
+      uploadFiles(Array.from(selection.currentTarget.files));
+    }
+
+    function uploadFiles(selectedFiles: Array<File>) {
       dispatch(AppActions.resetProgress());
       // openFileUploadDialog();
       const localLocation = findLocalLocation();
       const sourceLocationId = localLocation ? localLocation.uuid : undefined;
 
-      let files = Array.from(selection.currentTarget.files);
+      let files = selectedFiles;
       if (AppConfig.isElectron) {
         files = files.map((file) => {
           if (!file.path) {

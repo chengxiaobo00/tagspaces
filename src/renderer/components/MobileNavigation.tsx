@@ -36,6 +36,7 @@ import {
   RecentThingsIcon,
   SettingsIcon,
   TagLibraryIcon,
+  TakePictureIcon,
   TemplateFileIcon,
   ThemingIcon,
   WorkspacesIcon,
@@ -109,7 +110,7 @@ function MobileNavigation(props: Props) {
   const { setSelectedLocation, currentLocation, locations } =
     useCurrentLocationContext();
   const { currentDirectoryPath } = useDirectoryContentContext();
-  const { openFileUpload } = useFileUploadContext();
+  const { openFileUpload, openCameraCapture } = useFileUploadContext();
   const { openCreateEditLocationDialog } = useCreateEditLocationDialogContext();
   const { openCreateDirectoryDialog } = useCreateDirectoryDialogContext();
   const { openNewFileDialog } = useNewFileDialogContext();
@@ -522,6 +523,25 @@ function MobileNavigation(props: Props) {
                       </ListItemIcon>
                       <ListItemText primary={t('core:addFiles')} />
                     </MenuItem>
+                    {/* Capacitor-only: the WebView file chooser can't open the
+                        camera, so offer a dedicated trigger for the native
+                        camera plugin. */}
+                    {AppConfig.isCapacitor && (
+                      <MenuItem
+                        key="cameraTakePicture"
+                        data-tid="cameraTakePictureTID"
+                        onClick={() => {
+                          openCameraCapture(currentDirectoryPath);
+                          setOpenCreateMenu(false);
+                          hideDrawer?.();
+                        }}
+                      >
+                        <ListItemIcon>
+                          <TakePictureIcon />
+                        </ListItemIcon>
+                        <ListItemText primary={t('core:cameraTakePicture')} />
+                      </MenuItem>
+                    )}
                     {/* Web can't bypass browser CORS/CSP — only show the URL
                         download where it saves into the location. Pro feature:
                         enabled on Pro (BETA), disabled with a PRO badge on Lite,

@@ -173,6 +173,8 @@ export { default as NewFolderIcon } from '@mui/icons-material/CreateNewFolderOut
 
 export { default as AddExistingFileIcon } from '@mui/icons-material/ExitToApp';
 
+export { default as TakePictureIcon } from '@mui/icons-material/AddAPhotoOutlined';
+
 export { default as RecordIcon } from '@mui/icons-material/FiberManualRecord';
 
 export { default as StopIcon } from '@mui/icons-material/Stop';
