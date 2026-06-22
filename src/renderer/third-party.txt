@@ -2408,7 +2408,7 @@ MIT License
 
 The following npm package may be included in this product:
 
- - @tagspacespro/tagspacespro@5.0.249
+ - @tagspacespro/tagspacespro@5.0.250
 
 This package contains the following license:
 
@@ -3290,7 +3290,7 @@ This Hippocratic License is an Ethical Source license (https://ethicalsource.dev
 
 The following npm package may be included in this product:
 
- - @tagspacespro/extensions@2.0.22
+ - @tagspacespro/extensions@2.0.23
 
 This package contains the following license:
 
