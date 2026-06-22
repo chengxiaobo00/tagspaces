@@ -18,7 +18,9 @@
 
 import AppConfig from '-/AppConfig';
 import { adjustKeyBinding } from '-/components/dialogs/KeyboardDialog';
+import { isDesktopMode } from '-/reducers/settings';
 import Tooltip, { TooltipProps } from '@mui/material/Tooltip';
+import { useSelector } from 'react-redux';
 
 export type TsTooltipProps = Omit<TooltipProps, 'title'> & {
   title: React.ReactNode;
@@ -35,6 +37,13 @@ function TsTooltip(props: TsTooltipProps) {
     arrow = true,
     ...rest
   } = props;
+  // Skip tooltips outside desktop mode: on touch-first layouts they fire on
+  // tap/long-press and get in the way. Gating on desktop mode (not the native
+  // platform) keeps them for an iPad with a keyboard, where they make sense.
+  const desktopMode = useSelector(isDesktopMode);
+  if (!desktopMode) {
+    return <>{rest.children}</>;
+  }
   const tooltipText = keyBinding
     ? `${title} (${adjustKeyBinding(keyBinding)})`
     : title;
