@@ -148,23 +148,26 @@ export async function initializeIap(): Promise<void> {
 
     const wasUnlocked = isProUnlockedSync();
 
-    // Register the non-consumable Pro product for both stores. The
-    // platform-appropriate one activates at initialize() time below.
+    // Only ever touch the current device's store. Registering / initializing a
+    // foreign platform (e.g. Apple on Android) makes cdv-purchase wait on a
+    // native adapter that never reports ready, which hangs initialize()
+    // indefinitely — and with it every awaiter (getProProduct/purchasePro/dump).
+    const platform = AppConfig.isCapacitoriOS
+      ? Platform.APPLE_APPSTORE
+      : Platform.GOOGLE_PLAY;
+
+    // Register the non-consumable Pro product for the current store.
     try {
       store.register([
         {
           id: PRO_PRODUCT_ID,
           type: ProductType.NON_CONSUMABLE,
-          platform: Platform.APPLE_APPSTORE,
-        },
-        {
-          id: PRO_PRODUCT_ID,
-          type: ProductType.NON_CONSUMABLE,
-          platform: Platform.GOOGLE_PLAY,
+          platform,
         },
       ]);
     } catch (e) {
       console.warn('[iap] store.register failed:', e);
+      initializePromise = null; // allow a later retry
       return;
     }
 
@@ -208,10 +211,21 @@ export async function initializeIap(): Promise<void> {
     }
 
     try {
-      const platforms = [Platform.APPLE_APPSTORE, Platform.GOOGLE_PLAY];
-      await store.initialize(platforms);
+      // Initialize ONLY the current platform (see note above). The timeout is a
+      // safety net so a stalled native bridge surfaces as an error instead of
+      // hanging callers forever.
+      await Promise.race([
+        store.initialize([platform]),
+        new Promise((_, reject) =>
+          setTimeout(
+            () => reject(new Error('store.initialize timed out after 15s')),
+            15000,
+          ),
+        ),
+      ]);
     } catch (e) {
       console.warn('[iap] store.initialize failed:', e);
+      initializePromise = null; // allow a later retry
       return;
     }
 
@@ -372,7 +386,16 @@ export const ProProductId = PRO_PRODUCT_ID;
 //
 //   await window.__tsIap.dump()
 //   → { available, isUnlocked, product, ownedRaw }
-if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+// Exposed on all Capacitor builds (not just dev) because Play Billing / StoreKit
+// only return products on a store-recognized build (signed, installed from a
+// testing track) — which is a production webpack build — so a dev-only gate hid
+// this helper from exactly the builds where IAP can be debugged. Read-only
+// diagnostics: reports entitlement/product state and can re-run init/restore,
+// but cannot grant the entitlement.
+if (
+  typeof window !== 'undefined' &&
+  (AppConfig.isCapacitor || process.env.NODE_ENV === 'development')
+) {
   (window as any).__tsIap = {
     isAvailable: isIapAvailable,
     isUnlocked: isProUnlockedSync,
