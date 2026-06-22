@@ -92,6 +92,9 @@ const configuration: webpack.Configuration = {
   plugins: [
     new webpack.EnvironmentPlugin({
       NODE_ENV: 'production',
+      // Set to 'true' by the builder for the billing-free Lite Android APK,
+      // where the in-app-purchase plugin is stripped (see services/iap.ts).
+      TS_DISABLE_IAP: '',
     }),
     new Dotenv({
       path: path.join(

@@ -160,6 +160,8 @@
   "buyProAction": "以 {{price}} 購買 TagSpaces Pro",
   "restorePurchases": "還原購買項目",
   "redeemCode": "兌換代碼",
+  "proOnlyOnGooglePlay": "TagSpaces Pro 僅在 TagSpaces 的 Google Play 版本中以應用程式內購買的形式提供。請從 Google Play 安裝以進行升級。",
+  "openGooglePlay": "開啟 Google Play",
   "oneTimePurchase": "一次性購買",
   "familySharingNote": "iOS 支援家人共享 — 您的購買項目可延伸至家庭成員。",
   "purchaseCompleteReloading": "購買完成。正在重新啟動…",

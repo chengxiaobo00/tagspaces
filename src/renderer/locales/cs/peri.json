@@ -160,6 +160,8 @@
   "buyProAction": "Koupit TagSpaces Pro za {{price}}",
   "restorePurchases": "Obnovit nákupy",
   "redeemCode": "Uplatnit kód",
+  "proOnlyOnGooglePlay": "TagSpaces Pro je k dispozici jako nákup v aplikaci pouze ve verzi TagSpaces pro Google Play. Nainstalujte ji z Google Play a upgradujte.",
+  "openGooglePlay": "Otevřít Google Play",
   "oneTimePurchase": "Jednorázový nákup",
   "familySharingNote": "Rodinné sdílení podporováno na iOS — váš nákup se vztahuje i na členy rodiny.",
   "purchaseCompleteReloading": "Nákup dokončen. Restartování…",

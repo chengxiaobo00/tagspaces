@@ -71,6 +71,11 @@ export function isProUnlockedSync(): boolean {
 
 /** Whether IAP is usable on the current platform. */
 export function isIapAvailable(): boolean {
+  // The billing-free Lite Android APK strips capacitor-plugin-cdv-purchase and
+  // sets TS_DISABLE_IAP=true at build time (see ../builder/buildts.sh). With the
+  // native module gone there is no store to talk to, so report IAP unavailable
+  // and let the upgrade UI fall back to the "Pro on Google Play" message.
+  if (process.env.TS_DISABLE_IAP === 'true') return false;
   return Boolean(AppConfig.isCapacitor);
 }
 

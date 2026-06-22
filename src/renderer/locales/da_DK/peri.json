@@ -160,6 +160,8 @@
   "buyProAction": "Køb TagSpaces Pro for {{price}}",
   "restorePurchases": "Gendan køb",
   "redeemCode": "Indløs kode",
+  "proOnlyOnGooglePlay": "TagSpaces Pro er kun tilgængelig som et køb i appen i Google Play-udgaven af TagSpaces. Installer den fra Google Play for at opgradere.",
+  "openGooglePlay": "Åbn Google Play",
   "oneTimePurchase": "Engangskøb",
   "familySharingNote": "Familiedeling understøttes på iOS — dit køb omfatter også familiemedlemmer.",
   "purchaseCompleteReloading": "Køb gennemført. Genstarter…",

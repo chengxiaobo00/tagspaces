@@ -160,6 +160,8 @@
   "buyProAction": "TagSpaces Pro megvásárlása {{price}} áron",
   "restorePurchases": "Vásárlások visszaállítása",
   "redeemCode": "Kód beváltása",
+  "proOnlyOnGooglePlay": "A TagSpaces Pro alkalmazáson belüli vásárlásként csak a TagSpaces Google Play kiadásában érhető el. A frissítéshez telepítsd a Google Playből.",
+  "openGooglePlay": "Google Play megnyitása",
   "oneTimePurchase": "Egyszeri vásárlás",
   "familySharingNote": "Családi megosztás támogatott iOS-en — a vásárlásod a családtagokra is kiterjed.",
   "purchaseCompleteReloading": "A vásárlás kész. Újraindítás…",

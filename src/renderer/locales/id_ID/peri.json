@@ -160,6 +160,8 @@
   "buyProAction": "Beli TagSpaces Pro seharga {{price}}",
   "restorePurchases": "Pulihkan Pembelian",
   "redeemCode": "Tukarkan kode",
+  "proOnlyOnGooglePlay": "TagSpaces Pro tersedia sebagai pembelian dalam aplikasi hanya di edisi Google Play TagSpaces. Instal dari Google Play untuk meningkatkan.",
+  "openGooglePlay": "Buka Google Play",
   "oneTimePurchase": "Pembelian sekali bayar",
   "familySharingNote": "Berbagi Keluarga didukung di iOS — pembelian Anda berlaku untuk anggota keluarga.",
   "purchaseCompleteReloading": "Pembelian selesai. Memulai ulang…",

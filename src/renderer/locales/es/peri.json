@@ -160,6 +160,8 @@
   "buyProAction": "Comprar TagSpaces Pro por {{price}}",
   "restorePurchases": "Restaurar compras",
   "redeemCode": "Canjear código",
+  "proOnlyOnGooglePlay": "TagSpaces Pro está disponible como compra dentro de la aplicación solo en la edición de TagSpaces de Google Play. Instálala desde Google Play para actualizar.",
+  "openGooglePlay": "Abrir Google Play",
   "oneTimePurchase": "Compra única",
   "familySharingNote": "Family Sharing compatible en iOS: tu compra se extiende a los miembros de tu familia.",
   "purchaseCompleteReloading": "Compra completada. Reiniciando…",

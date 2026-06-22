@@ -160,6 +160,8 @@
   "buyProAction": "Գնել TagSpaces Pro-ն {{price}}-ով",
   "restorePurchases": "Վերականգնել գնումները",
   "redeemCode": "Օգտագործել կոդ",
+  "proOnlyOnGooglePlay": "TagSpaces Pro-ն հասանելի է որպես ներծրագրային գնում միայն TagSpaces-ի Google Play տարբերակում։ Տեղադրեք այն Google Play-ից՝ թարմացնելու համար։",
+  "openGooglePlay": "Բացել Google Play",
   "oneTimePurchase": "Միանվագ գնում",
   "familySharingNote": "iOS-ում աջակցվում է Family Sharing-ը՝ ձեր գնումը տարածվում է ընտանիքի անդամների վրա։",
   "purchaseCompleteReloading": "Գնումն ավարտված է։ Վերագործարկում…",

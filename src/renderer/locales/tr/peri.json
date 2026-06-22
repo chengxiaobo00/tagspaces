@@ -160,6 +160,8 @@
   "buyProAction": "TagSpaces Pro'yu {{price}} karşılığında satın al",
   "restorePurchases": "Satın Alımları Geri Yükle",
   "redeemCode": "Kodu kullan",
+  "proOnlyOnGooglePlay": "TagSpaces Pro yalnızca TagSpaces'in Google Play sürümünde uygulama içi satın alma olarak sunulur. Yükseltmek için Google Play'den yükleyin.",
+  "openGooglePlay": "Google Play'i aç",
   "oneTimePurchase": "Tek seferlik satın alma",
   "familySharingNote": "iOS'ta Aile Paylaşımı desteklenir — satın alımınız aile üyelerinizi kapsar.",
   "purchaseCompleteReloading": "Satın alma tamamlandı. Yeniden başlatılıyor…",

@@ -160,6 +160,8 @@
   "buyProAction": "{{price}}에 TagSpaces Pro 구매",
   "restorePurchases": "구매 복원",
   "redeemCode": "코드 사용",
+  "proOnlyOnGooglePlay": "TagSpaces Pro는 TagSpaces의 Google Play 버전에서만 인앱 구매로 제공됩니다. 업그레이드하려면 Google Play에서 설치하세요.",
+  "openGooglePlay": "Google Play 열기",
   "oneTimePurchase": "일회성 구매",
   "familySharingNote": "iOS에서 가족 공유가 지원됩니다 — 구매가 가족 구성원에게 확장됩니다.",
   "purchaseCompleteReloading": "구매가 완료되었습니다. 다시 시작하는 중…",

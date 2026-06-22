@@ -38,9 +38,8 @@ import { useAboutDialogContext } from '-/components/dialogs/hooks/useAboutDialog
 import { useKeyboardDialogContext } from '-/components/dialogs/hooks/useKeyboardDialogContext';
 import { useOnboardingDialogContext } from '-/components/dialogs/hooks/useOnboardingDialogContext';
 import { useProTeaserDialogContext } from '-/components/dialogs/hooks/useProTeaserDialogContext';
-import AppConfig from '-/AppConfig';
 import { Pro } from '-/pro';
-import { restoreProPurchase } from '-/services/iap';
+import { isIapAvailable, restoreProPurchase } from '-/services/iap';
 import { AppDispatch } from '-/reducers/app';
 import {
   actions as SettingsActions,
@@ -223,11 +222,12 @@ function HelpFeedbackPanel(props: Props) {
             <ListItemText>{t('core:emailContact')}</ListItemText>
           </ListItemButton>
         </ListItem>
-        {AppConfig.isCapacitor ? (
+        {isIapAvailable() ? (
           // Mobile Pro is a one-time non-consumable IAP — there is no
           // subscription to cancel. Offer Restore Purchases instead, gated
-          // on the platform (not on Pro) so a reinstalled user can restore
-          // before the entitlement has been re-applied.
+          // on IAP availability (not on Pro) so a reinstalled user can restore
+          // before the entitlement has been re-applied. The billing-free Lite
+          // APK reports IAP unavailable, so the button is hidden there.
           <ListItem disablePadding>
             <ListItemButton onClick={() => restoreProPurchase()}>
               <ListItemIcon>

@@ -160,6 +160,8 @@
   "buyProAction": "Mua TagSpaces Pro với giá {{price}}",
   "restorePurchases": "Khôi phục giao dịch mua",
   "redeemCode": "Đổi mã",
+  "proOnlyOnGooglePlay": "TagSpaces Pro chỉ có sẵn dưới dạng mua hàng trong ứng dụng ở phiên bản Google Play của TagSpaces. Hãy cài đặt từ Google Play để nâng cấp.",
+  "openGooglePlay": "Mở Google Play",
   "oneTimePurchase": "Mua một lần",
   "familySharingNote": "Chia sẻ với gia đình được hỗ trợ trên iOS — giao dịch mua của bạn được chia sẻ cho các thành viên gia đình.",
   "purchaseCompleteReloading": "Mua thành công. Đang khởi động lại…",

@@ -37,6 +37,8 @@ const Links = {
       urlParams,
     productProGeoTagging: 'https://www.tagspaces.org/usecases/geotagging/',
     productPro: 'https://www.tagspaces.org/products/pro/' + urlParams,
+    googlePlayListing:
+      'https://play.google.com/store/apps/details?id=org.tagspaces.mobileapp',
     productEnterprise:
       'https://www.tagspaces.org/products/enterprise/' + urlParams,
     downloadURL: 'https://www.tagspaces.org/downloads/' + urlParams,

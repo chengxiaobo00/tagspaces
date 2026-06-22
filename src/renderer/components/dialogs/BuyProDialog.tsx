@@ -160,6 +160,87 @@ function BuyProDialog(props: Props) {
     { Icon: FolderTwoToneIcon, label: t('peri:buyProFeatureFolderColor') },
   ];
 
+  // Billing-free build (e.g. the self-hosted Lite Android APK): the purchase
+  // plugin is stripped, so there is no store to drive. Instead of a dead
+  // "price unavailable" sheet, tell the user Pro is purchasable only in the
+  // Google Play edition and link them there. See services/iap.ts.
+  if (!isIapAvailable()) {
+    return (
+      <Dialog
+        open={open}
+        onClose={onClose}
+        fullScreen={smallScreen}
+        fullWidth
+        maxWidth="xs"
+        keepMounted
+        scroll="paper"
+        aria-labelledby="buy-pro-dialog-title"
+      >
+        <TsDialogTitle
+          dialogTitle={''}
+          closeButtonTestId="closeBuyProDialogTID"
+          onClose={onClose}
+        />
+        <DialogContent sx={{ paddingTop: 0 }}>
+          <Stack
+            spacing={2.5}
+            sx={{ alignItems: 'center', textAlign: 'center' }}
+          >
+            <Box
+              sx={{
+                width: 64,
+                height: 64,
+                borderRadius: '50%',
+                background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+                color: theme.palette.primary.contrastText,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <WorkspacePremiumRoundedIcon sx={{ fontSize: 38 }} />
+            </Box>
+            <Typography variant="h5" sx={{ fontWeight: 700 }}>
+              {t('peri:tagSpacesPro')}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {t('peri:proOnlyOnGooglePlay')}
+            </Typography>
+          </Stack>
+        </DialogContent>
+        <DialogActions
+          sx={{
+            paddingLeft: 'max(16px, env(safe-area-inset-left))',
+            paddingRight: 'max(16px, env(safe-area-inset-right))',
+            paddingTop: 1,
+            paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
+            gap: 1,
+            flexDirection: 'column',
+            alignItems: 'stretch',
+          }}
+        >
+          <TsButton
+            data-tid="openGooglePlayTID"
+            variant="contained"
+            onClick={() =>
+              openURLExternally(Links.links.googlePlayListing, true)
+            }
+            sx={{ minHeight: 52, fontWeight: 600 }}
+          >
+            {t('peri:openGooglePlay')}
+          </TsButton>
+          <TsButton
+            data-tid="closeBuyProInfoTID"
+            variant="text"
+            onClick={onClose}
+          >
+            {t('core:closeButton')}
+          </TsButton>
+        </DialogActions>
+      </Dialog>
+    );
+  }
+
   return (
     <Dialog
       open={open}
