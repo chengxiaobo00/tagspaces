@@ -176,6 +176,11 @@ function MainPage() {
     // eslint-disable-next-line
   }, [openedEntry]);
 
+  // Tracks whether the current full-width state was switched on automatically
+  // by the resize handler (vs. a manual expand-button / openLink toggle), so a
+  // later resize only undoes its own automatic change.
+  const autoFullWidth = useRef(false);
+
   useEventListener('resize', () => {
     if (!AppConfig.isNativeMobile) {
       updateDimensions();
@@ -192,11 +197,20 @@ function MainPage() {
       document.documentElement.clientHeight ||
       document.body.clientHeight;
 
-    if (openedEntry && !isEntryInFullWidth) {
-      const isFillWidth = h > w;
-      if (isFillWidth !== isEntryInFullWidth) {
-        setEntryInFullWidth(isFillWidth);
-      }
+    if (!openedEntry) return;
+
+    // Only the resize logic may undo what the resize logic did. Narrowing
+    // (h > w) auto-enables full-width and records that it was automatic;
+    // widening only switches it back off when *we* turned it on. This keeps a
+    // manually-toggled full-width (expand button / openLink) from being killed
+    // by a resize in a normal landscape window where h <= w.
+    const isFillWidth = h > w;
+    if (isFillWidth && !isEntryInFullWidth) {
+      autoFullWidth.current = true;
+      setEntryInFullWidth(true);
+    } else if (!isFillWidth && isEntryInFullWidth && autoFullWidth.current) {
+      autoFullWidth.current = false;
+      setEntryInFullWidth(false);
     }
   }, [openedEntry, isEntryInFullWidth, setEntryInFullWidth]);
 
