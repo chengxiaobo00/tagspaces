@@ -52,7 +52,7 @@ export const createTSTheme = (themeName: string, isDark: boolean = false) => {
             // On small screens dialogs render fullScreen (edge-to-edge); keep
             // the corners rounded against the backdrop instead of squaring them.
             [theme.breakpoints.down('md')]: {
-              borderRadius: AppConfig.defaultCSSRadius,
+              borderRadius: 0,
             },
             // FullScreen dialogs (mobile) cover the whole viewport including the
             // notch, but never inset their top. Push the content below the notch
