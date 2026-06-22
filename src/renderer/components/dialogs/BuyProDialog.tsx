@@ -34,7 +34,6 @@ import {
   restoreProPurchase,
 } from '-/services/iap';
 import { openURLExternally } from '-/services/utils-io';
-import AutoAwesomeTwoToneIcon from '@mui/icons-material/AutoAwesomeTwoTone';
 import FolderTwoToneIcon from '@mui/icons-material/FolderTwoTone';
 import HistoryTwoToneIcon from '@mui/icons-material/HistoryTwoTone';
 import ViewKanbanTwoToneIcon from '@mui/icons-material/ViewKanbanTwoTone';
@@ -108,7 +107,7 @@ function BuyProDialog(props: Props) {
       if (result.success) {
         setStatusMessage({
           kind: 'success',
-          text: t('core:purchaseCompleteReloading'),
+          text: t('peri:purchaseCompleteReloading'),
         });
         // The verify→finish listener in iap.ts triggers a reload shortly.
         return;
@@ -119,7 +118,7 @@ function BuyProDialog(props: Props) {
       }
       setStatusMessage({
         kind: 'error',
-        text: result.error ?? t('core:purchaseFailed'),
+        text: result.error ?? t('peri:purchaseFailed'),
       });
     } finally {
       setPurchaseInFlight(false);
@@ -134,13 +133,13 @@ function BuyProDialog(props: Props) {
       if (result.restored) {
         setStatusMessage({
           kind: 'success',
-          text: t('core:restoreCompleteReloading'),
+          text: t('peri:restoreCompleteReloading'),
         });
         return;
       }
       setStatusMessage({
         kind: 'info',
-        text: t('core:noPurchaseFoundToRestore'),
+        text: t('peri:noPurchaseFoundToRestore'),
       });
     } finally {
       setRestoreInFlight(false);
@@ -149,16 +148,16 @@ function BuyProDialog(props: Props) {
 
   const priceLine =
     product?.price ||
-    (loadingProduct ? t('core:loading') : t('core:priceUnavailable'));
+    (loadingProduct ? t('core:loading') : t('peri:priceUnavailable'));
 
   const buyDisabled =
     purchaseInFlight || restoreInFlight || loadingProduct || !product;
 
   const proFeatures = [
-    { Icon: ViewKanbanTwoToneIcon, label: t('core:buyProFeaturePerspectives') },
-    { Icon: AutoAwesomeTwoToneIcon, label: t('core:buyProFeatureAI') },
-    { Icon: HistoryTwoToneIcon, label: t('core:buyProFeatureRevisions') },
-    { Icon: FolderTwoToneIcon, label: t('core:buyProFeatureFolderColor') },
+    { Icon: ViewKanbanTwoToneIcon, label: t('peri:buyProFeaturePerspectives') },
+    // { Icon: AutoAwesomeTwoToneIcon, label: t('peri:buyProFeatureAI') },
+    { Icon: HistoryTwoToneIcon, label: t('peri:buyProFeatureRevisions') },
+    { Icon: FolderTwoToneIcon, label: t('peri:buyProFeatureFolderColor') },
   ];
 
   return (
@@ -204,10 +203,10 @@ function BuyProDialog(props: Props) {
               <WorkspacePremiumRoundedIcon sx={{ fontSize: 38 }} />
             </Box>
             <Typography variant="h5" sx={{ fontWeight: 700 }}>
-              {t('core:tagSpacesPro')}
+              {t('peri:tagSpacesPro')}
             </Typography>
             <Typography variant="body2" sx={{ opacity: 0.9, marginTop: 0.5 }}>
-              {t('core:buyProSubtitle')}
+              {t('peri:buyProSubtitle')}
             </Typography>
           </Box>
 
@@ -243,7 +242,7 @@ function BuyProDialog(props: Props) {
               {priceLine}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              {t('core:oneTimePurchase')}
+              {t('peri:oneTimePurchase')}
             </Typography>
           </Box>
 
@@ -256,7 +255,7 @@ function BuyProDialog(props: Props) {
             color="text.secondary"
             sx={{ textAlign: 'center' }}
           >
-            {t('core:familySharingNote')}{' '}
+            {t('peri:familySharingNote')}{' '}
             <Link
               component="button"
               type="button"
@@ -300,7 +299,7 @@ function BuyProDialog(props: Props) {
           {purchaseInFlight ? (
             <CircularProgress size={20} color="inherit" />
           ) : (
-            t('core:buyProAction', { price: product?.price ?? '' })
+            t('peri:buyProAction', { price: product?.price ?? '' })
           )}
         </TsButton>
         <Box
@@ -320,7 +319,7 @@ function BuyProDialog(props: Props) {
             {restoreInFlight ? (
               <CircularProgress size={18} />
             ) : (
-              t('core:restorePurchases')
+              t('peri:restorePurchases')
             )}
           </TsButton>
           <TsButton
@@ -329,7 +328,7 @@ function BuyProDialog(props: Props) {
             onClick={() => presentCodeRedemption()}
             disabled={purchaseInFlight || restoreInFlight}
           >
-            {t('core:redeemCode')}
+            {t('peri:redeemCode')}
           </TsButton>
         </Box>
       </DialogActions>

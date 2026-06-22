@@ -233,7 +233,7 @@ function HelpFeedbackPanel(props: Props) {
               <ListItemIcon>
                 <RestoreIcon />
               </ListItemIcon>
-              <ListItemText>{t('core:restorePurchases')}</ListItemText>
+              <ListItemText>{t('peri:restorePurchases')}</ListItemText>
             </ListItemButton>
           </ListItem>
         ) : (

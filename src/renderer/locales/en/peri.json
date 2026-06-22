@@ -149,5 +149,22 @@
   "ollamaIntroPrefix": "TagSpaces does not have its own AI engine or models, but relies entirely on external software like Ollama. If you don't have Ollama, you can download it for free from",
   "ollamaIntroSuffix": "and follow the installation instructions to get it set up on your computer.",
   "aiFunctionalityDisabled": "All AI-functionality is currently disabled. Please add and configure an AI-engine in order to use external AIs in TagSpaces.",
-  "confirmRemoveAiConfig": "Do you want to remove \"{{name}}\" AI config?"
+  "confirmRemoveAiConfig": "Do you want to remove \"{{name}}\" AI config?",
+  "tagSpacesPro": "TagSpaces Pro",
+  "buyProSubtitle": "Unlock TagSpaces Pro on this device — one-time purchase, yours forever.",
+  "buyProFeaturesList": "Includes Kanban, Calendar, Mapique and FolderViz perspectives, annotations, AI chat, and more.",
+  "buyProFeaturePerspectives": "All Pro perspectives — Kanban, Calendar, Mapique, FolderViz & Gallery",
+  "buyProFeatureAI": "Local AI — auto-generated tags, descriptions & photo analysis",
+  "buyProFeatureRevisions": "File revisions & autosave",
+  "buyProFeatureFolderColor": "Custom folder colors & backgrounds",
+  "buyProAction": "Buy TagSpaces Pro for {{price}}",
+  "restorePurchases": "Restore Purchases",
+  "redeemCode": "Redeem code",
+  "oneTimePurchase": "One-time purchase",
+  "familySharingNote": "Family Sharing supported on iOS — your purchase extends to family members.",
+  "purchaseCompleteReloading": "Purchase complete. Restarting…",
+  "purchaseFailed": "Purchase could not be completed.",
+  "restoreCompleteReloading": "Purchase restored. Restarting…",
+  "noPurchaseFoundToRestore": "No previous purchase found on this account.",
+  "priceUnavailable": "Price unavailable"
 }
