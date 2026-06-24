@@ -121,14 +121,24 @@ function normalizePath(path) {
 
 // --- Lifecycle ---
 
-// Configure the status bar so the WebView does not render behind it. Re-asserting
-// setOverlaysWebView({overlay:false}) also forces the native side to re-inset and
-// resize the WebView to full height — used to recover from iOS leaving the
-// WebView ~status-bar-height short after exiting element fullscreen.
+// Configure the status bar so the WebView does not render behind it.
+//
+// setOverlaysWebView({overlay:false}) is iOS-only here: on iOS re-asserting it
+// forces the native side to re-inset and resize the WebView to full height —
+// used to recover from iOS leaving the WebView ~status-bar-height short after
+// exiting element fullscreen. On Android it is a no-op under the enforced
+// edge-to-edge of Android 15+ and internally calls the deprecated
+// setSystemUiVisibility / setStatusBarColor APIs (which trip Google Play's
+// "deprecated APIs for edge-to-edge" check); MainActivity.insetWebViewFromSystemBars()
+// already handles the insets natively there, so we skip it on Android.
+// setStyle() uses the non-deprecated WindowInsetsControllerCompat and stays on
+// both platforms to keep the status-bar icons light on our dark bar.
 async function setupStatusBar() {
   try {
     const { StatusBar, Style } = require('@capacitor/status-bar');
-    await StatusBar.setOverlaysWebView({ overlay: false });
+    if (AppConfig.isCapacitoriOS) {
+      await StatusBar.setOverlaysWebView({ overlay: false });
+    }
     await StatusBar.setStyle({ style: Style.Dark });
   } catch (e) {
     console.warn('StatusBar setup failed:', e);
