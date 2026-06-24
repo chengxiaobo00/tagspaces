@@ -10,10 +10,16 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="29" />
 
-    <!-- Granular media permissions for SDK 33+ -->
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
-    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+    <!--
+      Granular READ_MEDIA_* permissions are intentionally NOT declared. As a file
+      manager we already hold MANAGE_EXTERNAL_STORAGE (All files access), which
+      covers reading images / video / audio in shared storage (access is via the
+      filesystem by path, not MediaStore — see StoragePermissionPlugin). Declaring
+      READ_MEDIA_IMAGES / READ_MEDIA_VIDEO on top of that violates Google Play's
+      Photo and Video Permissions policy ("permission use not directly related to
+      the app's core purpose") and gets the submission rejected. Gallery picks go
+      through the Android Photo Picker, which needs no permission.
+    -->
 
     <!-- Other permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
