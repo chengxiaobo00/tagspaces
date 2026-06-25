@@ -34,6 +34,22 @@
     <!-- Pro: voice-note recording (WebView getUserMedia) -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
+    <!--
+      Mark camera & microphone as NOT required. The CAMERA permission implicitly
+      adds android.hardware.camera AND android.hardware.camera.autofocus as
+      required="true", and RECORD_AUDIO implies android.hardware.microphone — so
+      Google Play filters the app off every device without an autofocus rear camera
+      (tablets with a fixed-focus cam like the Galaxy Tab S6 Lite, most emulators).
+      That dropped the supported-device count from ~20.8k to ~17.1k and made Play
+      serve testers the old Cordova build instead of this one. As a file manager
+      these features are optional, so we declare them not required to stay
+      installable everywhere; the code already handles their absence at runtime.
+    -->
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.any" android:required="false" />
+    <uses-feature android:name="android.hardware.microphone" android:required="false" />
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
