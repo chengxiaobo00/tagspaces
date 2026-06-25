@@ -21,7 +21,6 @@ import LogoIcon from '-/assets/icons/icon.png';
 import TextLogoIcon from '-/assets/images/text-logo.svg';
 import DraggablePaper from '-/components/DraggablePaper';
 import TsButton from '-/components/TsButton';
-import TsTooltip from '-/components/TsTooltip';
 import TranslucentDialog from '-/components/dialogs/components/TranslucentDialog';
 import TsDialogActions from '-/components/dialogs/components/TsDialogActions';
 import TsDialogTitle from '-/components/dialogs/components/TsDialogTitle';
@@ -167,8 +166,7 @@ function AboutDialog(props: Props) {
           src={LogoIcon}
           style={{ float: 'left', marginRight: 10, width: 120, height: 120 }}
         />
-        <TsTooltip
-          placement="top"
+        <Typography
           title={t('core:buildOnPlatformTooltip', {
             buildTime: versionMeta.buildTime,
             userAgent: navigator.userAgent,
@@ -177,14 +175,14 @@ function AboutDialog(props: Props) {
             // (React escapes it anyway), so disabling escaping is safe here.
             interpolation: { escapeValue: false },
           })}
+          component="span"
+          variant="subtitle1"
         >
-          <Typography component="span" variant="subtitle1">
-            {t('core:versionLabel')}&nbsp;
-            {tsType}&nbsp;{versionMeta.version}
-            &nbsp;{t('core:buildIdLabel')}&nbsp;
-            {buildID}
-          </Typography>
-        </TsTooltip>
+          {t('core:versionLabel')}&nbsp;
+          {tsType}&nbsp;{versionMeta.version}
+          &nbsp;{t('core:buildIdLabel')}&nbsp;
+          {buildID}
+        </Typography>
         <br />
         <br />
         <Typography id="aboutContent" variant="body1">
