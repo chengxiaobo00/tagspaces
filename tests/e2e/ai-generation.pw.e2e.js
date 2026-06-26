@@ -8,10 +8,15 @@
 //             supported file re-enables it
 //    TST7003  "Max tags" cannot be set to 0 (clamps to >=1)
 //
-//  Tier 2 — generation flow against a mocked Ollama (Playwright route):
-//    TST7004  tags generated -> file renamed by tag embedding -> the per-file
-//             "processed" check stays visible (regression: entry uuid churns
-//             on the tag-rename, the dialog must not lose the check)
+//  Tier 2 — generation flow against a mocked LLM (Playwright route):
+//    TST7004  Ollama-native: tags generated -> file renamed by tag embedding
+//             -> the per-file "processed" check stays visible (regression:
+//             entry uuid churns on the tag-rename, the dialog must not lose it)
+//    TST7005  OpenAI-compatible (LM Studio/llama.cpp): tags generated via
+//             /v1/chat/completions; asserts the request adapter emitted
+//             OpenAI-shaped messages + response_format.json_schema
+//    TST7006  Settings → AI add-engine menu offers all presets; picking
+//             LM Studio fills the OpenAI base URL :1234/v1 (UI only, no net)
 //
 // All AI features are Pro and don't apply to S3 — tagged [electron,_pro].
 
@@ -29,7 +34,9 @@ import { startTestingApp, stopApp, testDataRefresh } from './hook';
 import { clearDataStorage, closeWelcomePlaywright } from './welcome.helpers';
 import {
   armOllamaMock,
+  armOpenAIMock,
   disarmOllamaMock,
+  disarmOpenAIMock,
   openAiGenerationDialog,
 } from './ai.helpers';
 
@@ -153,6 +160,135 @@ test.describe('TST70 - AI generation: supported-files guard [electron,_pro]', ()
     await openAiGenerationDialog();
     await expectElementExist('[data-tid=aiCannotGenerateAlertTID]', false, 2000);
     expect(await isDisabled('[data-tid=startTagsGenTID]')).toBe(false);
+  });
+});
+
+test.describe('TST70 - AI generation: mocked OpenAI-compatible [electron,_pro]', () => {
+  test.afterEach(async ({ isS3, testDataDir }) => {
+    await testDataRefresh(isS3, testDataDir);
+    await clearDataStorage();
+    await stopApp();
+  });
+
+  test('TST7005 - OpenAI-compatible: tags generated via /v1, response_format adapter [electron,_pro]', async ({
+    isWeb,
+    isS3,
+    webServerPort,
+    testDataDir,
+  }, testInfo) => {
+    // Same end-to-end flow as TST7004 but against the generic OpenAI-compatible
+    // client (LM Studio / llama.cpp): the model list comes from GET /v1/models
+    // and generation from POST /v1/chat/completions. This exercises the engine
+    // dispatch + the request adapter that Ollama's native path never touches.
+    await bootWithLocation(
+      { isWeb, isS3, webServerPort, testInfo },
+      testDataDir,
+      'extconfig-ai-mock-openai.js',
+    );
+
+    const capture = {
+      models: 0,
+      chat: 0,
+      requests: [],
+      lastChatBody: null,
+    };
+    await armOpenAIMock(capture, ['e2ealpha', 'e2ebeta', 'e2egamma']);
+    try {
+      await selectFile('sample.txt');
+      await openAiGenerationDialog();
+      await clickOn('[data-tid=startTagsGenTID]');
+
+      // Mock exercised: model list (/v1/models) + at least one chat call.
+      await expect
+        .poll(() => capture.chat, { timeout: 30000, intervals: [300] })
+        .toBeGreaterThan(0);
+      expect(capture.models).toBeGreaterThan(0);
+
+      // The renderer hit the OpenAI endpoints, not Ollama's /api/*.
+      expect(
+        capture.requests.some((r) => r.includes('/v1/chat/completions')),
+      ).toBe(true);
+      expect(capture.requests.every((r) => !r.includes('/api/chat'))).toBe(true);
+
+      // The adapter translated the internal request: OpenAI-shaped messages and
+      // the tags-mode JSON schema surfaced as response_format.json_schema.
+      expect(Array.isArray(capture.lastChatBody?.messages)).toBe(true);
+      expect(capture.lastChatBody?.response_format?.type).toBe('json_schema');
+      expect(
+        capture.lastChatBody?.response_format?.json_schema?.schema,
+      ).toBeTruthy();
+
+      // Wait for the per-file processed check so the tag-apply + rename has
+      // actually landed before we close and read the on-disk state.
+      await expectElementExist('[data-tid=aiEntryProcessedTID]', true, 40000);
+
+      // Tags applied -> file renamed by tag embedding (same assertion as 7004).
+      await clickOn('[data-tid=cancelTagsGenTID]');
+      await reloadDirectory();
+      await expectElementExist(
+        getGridFileSelector('sample[e2ealpha e2ebeta e2egamma].txt'),
+        true,
+        15000,
+      );
+      await expectElementExist(getGridFileSelector('sample.txt'), false, 3000);
+    } finally {
+      await disarmOpenAIMock();
+    }
+  });
+});
+
+test.describe('TST70 - AI settings: OpenAI-compatible presets [electron,_pro]', () => {
+  test.afterEach(async ({ isS3, testDataDir }) => {
+    await testDataRefresh(isS3, testDataDir);
+    await clearDataStorage();
+    await stopApp();
+  });
+
+  test('TST7006 - Add-engine menu offers presets; LM Studio fills :1234/v1 [electron,_pro]', async ({
+    isWeb,
+    isS3,
+    webServerPort,
+    testDataDir,
+  }, testInfo) => {
+    // Booted WITHOUT ExtAI so the provider-editing UI is enabled (see
+    // extconfig-ai-ui.js). Pure UI/redux assertion — no network — covering the
+    // presets table and the per-preset default-URL logic.
+    await bootWithLocation(
+      { isWeb, isS3, webServerPort, testInfo },
+      testDataDir,
+      'extconfig-ai-ui.js',
+    );
+
+    await clickOn('[data-tid=settings]');
+    await clickOn('[data-tid=aiSettingsDialogTID]');
+    await global.client.waitForSelector('[data-tid=createNewAIButtonTID]', {
+      state: 'visible',
+      timeout: 10000,
+    });
+
+    // Open the add-engine menu and confirm every preset is offered.
+    await clickOn('[data-tid=createNewAIButtonTID]');
+    await expectElementExist('[data-tid=aiAddProvider_ollamaTID]', true, 5000);
+    await expectElementExist('[data-tid=aiAddProvider_lmstudioTID]', true, 3000);
+    await expectElementExist('[data-tid=aiAddProvider_llamacppTID]', true, 3000);
+    await expectElementExist(
+      '[data-tid=aiAddProvider_openai-compatibleTID]',
+      true,
+      3000,
+    );
+
+    // Pick LM Studio -> a provider accordion appears, pre-filled with the
+    // OpenAI base URL and the preset label.
+    await clickOn('[data-tid=aiAddProvider_lmstudioTID]');
+    await expect
+      .poll(() => global.client.inputValue('[data-tid=ollamaEngineTID] input'), {
+        timeout: 8000,
+        intervals: [200],
+      })
+      .toBe('http://localhost:1234/v1');
+    expect(
+      await global.client.inputValue('[data-tid=engineTID] input'),
+    ).toBe('LM Studio');
   });
 });
 

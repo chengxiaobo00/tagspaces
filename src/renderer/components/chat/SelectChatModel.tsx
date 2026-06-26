@@ -16,11 +16,15 @@
  *
  */
 
-import { DownloadIcon, OllamaIcon, RemoveIcon } from '-/components/CommonIcons';
+import {
+  AIIcon,
+  DownloadIcon,
+  OllamaIcon,
+  RemoveIcon,
+} from '-/components/CommonIcons';
 import TsIconButton from '-/components/TsIconButton';
 import TsSelect from '-/components/TsSelect';
 import { AIProvider } from '-/components/chat/ChatTypes';
-import { getOllamaModels } from '-/components/chat/OllamaClient';
 import { useChatContext } from '-/hooks/useChatContext';
 import { useNotificationContext } from '-/hooks/useNotificationContext';
 import { getDefaultAIProvider } from '-/reducers/settings';
@@ -50,7 +54,7 @@ function SelectChatModel(props: Props) {
   const { t } = useTranslation();
   const { id, label, aiProvider, chosenModel, handleChangeModel, disabled } =
     props;
-  const { removeModel, getOllamaClient, models } = useChatContext();
+  const { removeModel, getAiClient, models } = useChatContext();
   const { openConfirmDialog } = useNotificationContext();
 
   const defaultAiProvider: AIProvider = useSelector(getDefaultAIProvider);
@@ -58,10 +62,17 @@ function SelectChatModel(props: Props) {
     aiProvider?.id === defaultAiProvider?.id ? models : [],
   );
 
+  // Ollama supports in-app model download/delete; OpenAI-compatible servers
+  // (LM Studio, llama.cpp, …) manage models externally, so those controls hide.
+  const isOllama = aiProvider?.engine === 'ollama';
+
   useEffect(() => {
-    if (aiProvider && aiProvider.engine === 'ollama') {
-      getOllamaClient(aiProvider.url).then((client) => {
-        getOllamaModels(client).then((m) => {
+    if (aiProvider) {
+      getAiClient(aiProvider).then((client) => {
+        if (!client) {
+          return;
+        }
+        client.list().then((m) => {
           if (!m || JSON.stringify(m) !== JSON.stringify(installedModels)) {
             setModels(m ? m : []);
           }
@@ -190,7 +201,10 @@ function SelectChatModel(props: Props) {
     removeModel(chosenModel);
   };
   function getTitle(model) {
-    return model ? format(parseISO(model.modified_at), 'yyyy-MM-dd') : '';
+    // OpenAI-compatible servers don't report a modified date.
+    return model && model.modified_at
+      ? format(parseISO(model.modified_at), 'yyyy-MM-dd')
+      : '';
   }
 
   return (
@@ -203,7 +217,7 @@ function SelectChatModel(props: Props) {
       id={id ? id : 'selectChatModelId'}
       slotProps={{
         input: {
-          endAdornment: chosenModel && (
+          endAdornment: chosenModel && isOllama && (
             <InputAdornment
               position="end"
               sx={{ marginLeft: '-30px', marginRight: '10px' }}
@@ -234,9 +248,23 @@ function SelectChatModel(props: Props) {
                 paddingLeft: '3px',
               }}
             >
-              <OllamaIcon
-                sx={{ width: '24px', height: '24px', verticalAlign: 'middle' }}
-              />
+              {isOllama ? (
+                <OllamaIcon
+                  sx={{
+                    width: '24px',
+                    height: '24px',
+                    verticalAlign: 'middle',
+                  }}
+                />
+              ) : (
+                <AIIcon
+                  sx={{
+                    width: '24px',
+                    height: '24px',
+                    verticalAlign: 'middle',
+                  }}
+                />
+              )}
             </ListItemIcon>
             <ListItemText
               sx={{
@@ -244,7 +272,9 @@ function SelectChatModel(props: Props) {
                 alignItems: 'center',
               }}
             >
-              {model.name} {(model.size / (1024 * 1024 * 1024)).toFixed(2)} GB
+              {model.name}
+              {model.size > 0 &&
+                ' ' + (model.size / (1024 * 1024 * 1024)).toFixed(2) + ' GB'}
             </ListItemText>
           </MenuItem>
         ))
@@ -253,26 +283,31 @@ function SelectChatModel(props: Props) {
           {t('core:noAIModelsInstaller')}
         </MenuItem>
       )}
-      <ListSubheader>{t('core:exampleInstallableModels')}</ListSubheader>
-      {ollamaAvailableModels.map((model) => (
-        <MenuItem
-          key={model.name}
-          value={model.name}
-          title={model.details.format}
-        >
+      {isOllama && (
+        <ListSubheader>{t('core:exampleInstallableModels')}</ListSubheader>
+      )}
+      {isOllama &&
+        ollamaAvailableModels.map((model) => (
+          <MenuItem
+            key={model.name}
+            value={model.name}
+            title={model.details.format}
+          >
+            <ListItemIcon>
+              <DownloadIcon />
+            </ListItemIcon>
+            {model.name}
+          </MenuItem>
+        ))}
+      {isOllama && <ListSubheader>{t('core:moreActions')}</ListSubheader>}
+      {isOllama && (
+        <MenuItem value="customModel">
           <ListItemIcon>
             <DownloadIcon />
           </ListItemIcon>
-          {model.name}
+          {t('core:installCustomModel')}
         </MenuItem>
-      ))}
-      <ListSubheader>{t('core:moreActions')}</ListSubheader>
-      <MenuItem value="customModel">
-        <ListItemIcon>
-          <DownloadIcon />
-        </ListItemIcon>
-        {t('core:installCustomModel')}
-      </MenuItem>
+      )}
     </TsSelect>
   );
 }

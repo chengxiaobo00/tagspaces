@@ -18,6 +18,7 @@
 
 import AppConfig from '-/AppConfig';
 import {
+  AIIcon,
   CreateFileIcon,
   ExpandIcon,
   OllamaIcon,
@@ -31,7 +32,12 @@ import TsMenuList from '-/components/TsMenuList';
 import TsSelect from '-/components/TsSelect';
 import TsSwitch from '-/components/TsSwitch';
 import TsTextField from '-/components/TsTextField';
-import { AIProvider, AIProviders } from '-/components/chat/ChatTypes';
+import { AIProvider } from '-/components/chat/ChatTypes';
+import {
+  AiPreset,
+  aiPresets,
+  presetIconForEngine,
+} from '-/components/chat/aiPresets';
 import SelectChatModel from '-/components/chat/SelectChatModel';
 import { useChatContext } from '-/hooks/useChatContext';
 import { Pro } from '-/pro';
@@ -111,9 +117,17 @@ function SettingsAI(props: Props) {
     setOpenedNewAIMenu(false);
   };
 
+  function engineIcon(engine: AIProvider['engine'], sx?: any) {
+    return presetIconForEngine(engine) === 'ollama' ? (
+      <OllamaIcon sx={sx} />
+    ) : (
+      <AIIcon sx={sx} />
+    );
+  }
+
   function checkOllamaAlive() {
     aiProviders.map((provider) =>
-      checkProviderAlive(provider.url).then((alive) => {
+      checkProviderAlive(provider).then((alive) => {
         providersAlive.current = {
           ...providersAlive.current,
           [provider.id]: alive,
@@ -143,22 +157,19 @@ function SettingsAI(props: Props) {
     dispatch(SettingsActions.setAiProvider(providerId));
   };
 
-  const addAiProvider = (provider: AIProviders) => {
-    //event: ChangeEvent<HTMLInputElement>) => {
-    //const provider: AIProviders = event.target.value as AIProviders;
-    const providerUrl = provider === 'ollama' ? 'http://localhost:11434' : '';
-    checkProviderAlive(providerUrl).then((isAlive) => {
-      const providerId = getUuid();
+  const addAiProvider = (preset: AiPreset) => {
+    const providerId = getUuid();
+    const aiProvider: AIProvider = {
+      id: providerId,
+      engine: preset.engine,
+      name: preset.label,
+      url: preset.defaultUrl,
+      enable: true,
+    };
+    checkProviderAlive(aiProvider).then((isAlive) => {
       providersAlive.current = {
         ...providersAlive.current,
         [providerId]: isAlive,
-      };
-      const aiProvider: AIProvider = {
-        id: providerId,
-        engine: provider,
-        name: provider,
-        url: providerUrl,
-        enable: true,
       };
       dispatch(SettingsActions.addAiProvider(aiProvider));
     });
@@ -309,19 +320,25 @@ function SettingsAI(props: Props) {
                   >
                     <Paper>
                       <TsMenuList id="split-button-menu" autoFocusItem>
-                        <MenuItem
-                          key="createNewTextFileTID"
-                          data-tid="aiCreateNewTextFileTID"
-                          onClick={() => {
-                            addAiProvider('ollama');
-                            setOpenedNewAIMenu(false);
-                          }}
-                        >
-                          <ListItemIcon>
-                            <OllamaIcon />
-                          </ListItemIcon>
-                          <ListItemText primary="Ollama" />
-                        </MenuItem>
+                        {aiPresets.map((preset) => (
+                          <MenuItem
+                            key={preset.key}
+                            data-tid={'aiAddProvider_' + preset.key + 'TID'}
+                            onClick={() => {
+                              addAiProvider(preset);
+                              setOpenedNewAIMenu(false);
+                            }}
+                          >
+                            <ListItemIcon>
+                              {preset.icon === 'ollama' ? (
+                                <OllamaIcon />
+                              ) : (
+                                <AIIcon />
+                              )}
+                            </ListItemIcon>
+                            <ListItemText primary={preset.label} />
+                          </MenuItem>
+                        ))}
                       </TsMenuList>
                     </Paper>
                   </Grow>
@@ -340,7 +357,7 @@ function SettingsAI(props: Props) {
                 .filter((p) => p.enable)
                 .map((provider) => (
                   <MenuItem key={provider.id} value={provider.id}>
-                    <OllamaIcon />
+                    {engineIcon(provider.engine)}
                     <Box sx={{ display: 'inline-block', marginLeft: '5px' }}>
                       {provider.name}
                     </Box>
@@ -369,7 +386,7 @@ function SettingsAI(props: Props) {
               '& .MuiAccordionSummary-content': { alignItems: 'center' },
             }}
           >
-            <OllamaIcon />
+            {engineIcon(provider.engine)}
             <Typography sx={{ marginLeft: '5px' }}>{provider.name}</Typography>
             <TsTooltip
               title={
