@@ -60,12 +60,7 @@ import { useTranslation } from 'react-i18next';
 import { useDispatch, useSelector } from 'react-redux';
 import SidePanelTitle from './SidePanelTitle';
 
-interface Props {
-  style?: any;
-  reduceHeightBy?: number;
-}
-
-function HelpFeedbackPanel(props: Props) {
+function HelpFeedbackPanel() {
   const { t } = useTranslation();
   const theme = useTheme();
   const desktopMode = useSelector(isDesktopMode);
@@ -75,7 +70,6 @@ function HelpFeedbackPanel(props: Props) {
   const { openOnboardingDialog } = useOnboardingDialogContext();
   const { openKeyboardDialog } = useKeyboardDialogContext();
   const { openProTeaserDialog } = useProTeaserDialogContext();
-  const { reduceHeightBy } = props;
 
   return (
     <Box
@@ -84,7 +78,8 @@ function HelpFeedbackPanel(props: Props) {
         flexDirection: 'column',
         paddingLeft: '5px',
         paddingRight: '5px',
-        height: '100%',
+        flex: 1,
+        minHeight: 0,
       }}
     >
       <SidePanelTitle title={t('core:helpFeedback')} />
@@ -93,7 +88,8 @@ function HelpFeedbackPanel(props: Props) {
         component="nav"
         aria-label="main help area"
         sx={{
-          height: 'calc(100% - ' + reduceHeightBy + 'px)',
+          flex: 1,
+          minHeight: 0,
           overflowY: 'auto',
           marginRight: '5px',
         }}

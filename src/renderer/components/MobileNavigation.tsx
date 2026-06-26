@@ -212,6 +212,8 @@ function MobileNavigation(props: Props) {
         backdropFilter: 'blur(5px)',
         height: '100%',
         overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
         width: widthValue,
         maxWidth: widthValue,
         // The drawer paper is position:fixed at the viewport top, so it ignores
@@ -226,10 +228,13 @@ function MobileNavigation(props: Props) {
       <Box
         sx={{
           overflow: 'hidden',
-          height: showProTeaser ? 'calc(100% - 190px)' : 'calc(100% - 55px)',
+          flex: 1,
+          minHeight: 0,
+          display: 'flex',
+          flexDirection: 'column',
         }}
       >
-        <Box>
+        <Box sx={{ flexShrink: 0 }}>
           <CustomLogo />
           <Box
             sx={{
@@ -625,26 +630,24 @@ function MobileNavigation(props: Props) {
             )}
           </Popper>
         </ClickAwayListener>
-        <LocationManager
-          reduceHeightBy={desktopMode ? 150 : 180}
-          show={currentOpenedPanel === 'locationManagerPanel'}
-        />
-        {currentOpenedPanel === 'tagLibraryPanel' && (
-          <TagLibrary reduceHeightBy={desktopMode ? 140 : 170} />
-        )}
-        {currentOpenedPanel === 'searchPanel' && (
-          <StoredSearches reduceHeightBy={desktopMode ? 140 : 165} />
-        )}
-        {currentOpenedPanel === 'helpFeedbackPanel' && (
-          <HelpFeedbackPanel reduceHeightBy={desktopMode ? 150 : 175} />
-        )}
+        <LocationManager show={currentOpenedPanel === 'locationManagerPanel'} />
+        {currentOpenedPanel === 'tagLibraryPanel' && <TagLibrary />}
+        {currentOpenedPanel === 'searchPanel' && <StoredSearches />}
+        {currentOpenedPanel === 'helpFeedbackPanel' && <HelpFeedbackPanel />}
       </Box>
       <Box
         sx={{
           display: 'flex',
           flexDirection: 'column',
-          marginTop: desktopMode ? '-10px' : '-25px',
+          flexShrink: 0,
           backgroundColor: theme.palette.background.default,
+          paddingTop: '5px',
+          // Keep the bottom nav clear of the OS gesture bar / home indicator on
+          // iOS & Android; --sab falls back to env(safe-area-inset-bottom), and
+          // the 8px floor gives a small touch margin on web/desktop where the
+          // inset is 0.
+          paddingBottom:
+            'max(9px, var(--sab, env(safe-area-inset-bottom, 0px)))',
         }}
       >
         {showProTeaser && (

@@ -59,7 +59,6 @@ import SidePanelTitle from './SidePanelTitle';
 interface Props {
   style?: any;
   showUnixHiddenEntries: boolean;
-  reduceHeightBy: number;
   storedSearchesVisible: boolean;
   showBookmarks: boolean;
   fileOpenHistory: boolean;
@@ -123,8 +122,6 @@ function StoredSearches(props: Props) {
 
   const noSearchesFound = searches.length < 1;
 
-  const { reduceHeightBy } = props;
-
   const bookmarkItems: Array<TS.BookmarkItem> =
     Pro && bookmarksContext
       ? bookmarksContext.bookmarks //getBookmarks()
@@ -142,7 +139,8 @@ function StoredSearches(props: Props) {
       sx={{
         display: 'flex',
         flexDirection: 'column',
-        height: '100%',
+        flex: 1,
+        minHeight: 0,
         borderRadius: AppConfig.defaultCSSRadius,
         marginLeft: '5px',
         marginRight: '5px',
@@ -153,7 +151,8 @@ function StoredSearches(props: Props) {
         sx={{
           paddingTop: 0,
           marginTop: 0,
-          height: 'calc(100% - ' + reduceHeightBy + 'px)',
+          flex: 1,
+          minHeight: 0,
           width: '100%',
           overflowY: 'auto',
           overflowX: 'hidden',

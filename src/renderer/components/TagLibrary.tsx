@@ -61,11 +61,7 @@ import React, {
 import { useTranslation } from 'react-i18next';
 import { useDispatch, useSelector } from 'react-redux';
 
-interface Props {
-  reduceHeightBy: number;
-}
-
-function TagLibrary({ reduceHeightBy }: Props) {
+function TagLibrary() {
   const { t } = useTranslation();
   const {
     createTagGroup,
@@ -277,7 +273,8 @@ function TagLibrary({ reduceHeightBy }: Props) {
   return (
     <Box
       sx={{
-        height: '100%',
+        flex: 1,
+        minHeight: 0,
         paddingLeft: '5px',
         paddingRight: '5px',
         display: 'flex',
@@ -373,7 +370,8 @@ function TagLibrary({ reduceHeightBy }: Props) {
           paddingTop: 0,
           marginTop: 0,
           borderRadius: '5px',
-          height: `calc(100% - ${reduceHeightBy}px)`,
+          flex: 1,
+          minHeight: 0,
           width: '100%',
           overflowY: 'auto',
           overflowX: 'hidden',

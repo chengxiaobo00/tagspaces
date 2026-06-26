@@ -38,7 +38,6 @@ import { useSelector } from 'react-redux';
 
 interface Props {
   style?: any;
-  reduceHeightBy: number;
   show: boolean;
 }
 
@@ -101,7 +100,7 @@ function LocationManager(props: Props) {
     moveLocation(result.draggableId, result.destination.index);
   };
 
-  const { reduceHeightBy, show } = props;
+  const { show } = props;
 
   function getWorkSpace(l) {
     if (l.workSpaceId) {
@@ -141,7 +140,8 @@ function LocationManager(props: Props) {
       sx={{
         display: show ? 'flex' : 'none',
         flexDirection: 'column',
-        height: '100%',
+        flex: 1,
+        minHeight: 0,
         paddingLeft: '5px',
         paddingRight: '5px',
         position: 'relative',
@@ -167,7 +167,8 @@ function LocationManager(props: Props) {
       {locationDirectoryContextMenuAnchorEl && <LocationContextMenu />}
       <Box
         sx={{
-          height: `calc(100% - ${reduceHeightBy}px)`,
+          flex: 1,
+          minHeight: 0,
           display: 'flex',
           flexDirection: 'column',
         }}
