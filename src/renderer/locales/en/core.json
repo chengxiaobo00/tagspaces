@@ -1081,6 +1081,8 @@
   "filterLocationsPlaceholder": "Filter by location or workspace name...",
   "filterTags": "Filter tags",
   "filterTagsPlaceholder": "Filter by tag, description or group name...",
+  "filterQuickAccess": "Filter quick access",
+  "filterQuickAccessPlaceholder": "Filter by name...",
   "noMatchesFound": "No matches found",
   "movingFileNotPossible": "Moving file not possible",
   "importingFilesFailedNoFolderOpen": "Importing files failed, because no folder is opened in TagSpaces!",
