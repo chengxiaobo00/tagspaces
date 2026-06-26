@@ -47,6 +47,7 @@ interface Props {
   moveTagGroup: (tagGroupUuid: TS.Uuid, position: number) => void;
   tagGroupCollapsed: Array<string>;
   isReadOnly: boolean;
+  dndDisabled?: boolean;
 }
 
 function TagGroupTitleDnD(props: Props) {
@@ -58,6 +59,7 @@ function TagGroupTitleDnD(props: Props) {
     toggleTagGroup,
     tagGroupCollapsed,
     isReadOnly,
+    dndDisabled,
   } = props;
   const { findLocation } = useCurrentLocationContext();
   const tagGroupRef = useRef<HTMLSpanElement>(null);
@@ -81,6 +83,7 @@ function TagGroupTitleDnD(props: Props) {
   const [, drag] = useDrag({
     type: DragItemTypes.TAG_GROUP,
     item: { tagGroup: tagGroup, index: index },
+    canDrag: () => !dndDisabled,
   });
 
   const dropHandler = (dragItem, monitor) => {
@@ -118,6 +121,7 @@ function TagGroupTitleDnD(props: Props) {
 
   const [{ isOver }, drop] = useDrop({
     accept: DragItemTypes.TAG_GROUP,
+    canDrop: () => !dndDisabled,
     drop: dropHandler,
     collect: (monitor) => ({
       isOver: monitor.isOver(),

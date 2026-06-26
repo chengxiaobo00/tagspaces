@@ -58,6 +58,7 @@ interface Props {
   editTagForEntry?: (path: string, tag: TS.Tag) => void;
   deleteIcon?: Object;
   reorderTags?: boolean;
+  dndDisabled?: boolean;
 }
 
 const TagContainerDnd = (props: Props) => {
@@ -74,6 +75,7 @@ const TagContainerDnd = (props: Props) => {
     changeTagOrder,
     editTagForEntry,
     moveTag,
+    dndDisabled,
   } = props;
 
   const { addTags } = useTaggingActionsContext();
@@ -120,6 +122,7 @@ const TagContainerDnd = (props: Props) => {
     type: DragItemTypes.TAG,
     item: { tag, tagGroup },
     end: endDrag,
+    canDrag: () => !dndDisabled,
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),

@@ -17,13 +17,14 @@
  */
 
 import AppConfig from '-/AppConfig';
-import { MoreMenuIcon } from '-/components/CommonIcons';
+import { CloseIcon, FilterIcon, MoreMenuIcon } from '-/components/CommonIcons';
 import CustomDragLayer from '-/components/CustomDragLayer';
 import SidePanelTitle from '-/components/SidePanelTitle';
 import TagContainerDnd from '-/components/TagContainerDnd';
 import TagGroupContainer from '-/components/TagGroupContainer';
 import TagGroupTitleDnD from '-/components/TagGroupTitleDnD';
 import TsIconButton from '-/components/TsIconButton';
+import TsTextField from '-/components/TsTextField';
 import CreateTagGroupDialog from '-/components/dialogs/CreateTagGroupDialog';
 import CreateTagsDialog from '-/components/dialogs/CreateTagsDialog';
 import EditTagDialog from '-/components/dialogs/EditTagDialog';
@@ -44,13 +45,20 @@ import {
   getTagColor,
   getTagGroupCollapsed,
   getTagTextColor,
+  isDesktopMode,
 } from '-/reducers/settings';
 import SmartTags from '-/reducers/smart-tags';
 import { getAllTags } from '-/services/taglibrary-utils';
 import { TS } from '-/tagspaces.namespace';
 import { CommonLocation } from '-/utils/CommonLocation';
 import AddIcon from '@mui/icons-material/Add';
-import { Box, Collapse, IconButton } from '@mui/material';
+import {
+  Box,
+  Collapse,
+  IconButton,
+  InputAdornment,
+  Typography,
+} from '@mui/material';
 import React, {
   useCallback,
   useContext,
@@ -76,11 +84,16 @@ function TagLibrary() {
   const { openConfirmDialog } = useNotificationContext();
   const [wSpaceTagGroups, setWSpaceTagGroups] =
     useState<TS.TagGroup[]>(tagGroups);
+  const [showFilter, setShowFilter] = useState<boolean>(false);
+  const [filterQuery, setFilterQuery] = useState<string>('');
   const dispatch: AppDispatch = useDispatch();
   const tagBackgroundColor = useSelector(getTagColor);
   const tagTextColor = useSelector(getTagTextColor);
   const tagGroupCollapsed: Array<string> = useSelector(getTagGroupCollapsed);
   const saveTagInLocation: boolean = useSelector(getSaveTagInLocation);
+  const desktopMode = useSelector(isDesktopMode);
+
+  const query = showFilter ? filterQuery.trim().toLowerCase() : '';
 
   const [tagGroupMenuAnchorEl, setTagGroupMenuAnchorEl] =
     useState<null | HTMLElement>(null);
@@ -157,6 +170,15 @@ function TagLibrary() {
     [],
   );
 
+  const toggleFilter = useCallback(() => {
+    setShowFilter((prev) => {
+      if (prev) {
+        setFilterQuery('');
+      }
+      return !prev;
+    });
+  }, []);
+
   const showCreateTagGroupDialog = useCallback(() => {
     setIsCreateTagGroupDialogOpened(true);
   }, []);
@@ -191,9 +213,9 @@ function TagLibrary() {
   const renderTagGroup = useCallback(
     (tagGroup, index: number) => {
       if (!saveTagInLocation && tagGroup.locationId) return null;
-      const expanded = !(
-        tagGroupCollapsed && tagGroupCollapsed.includes(tagGroup.uuid)
-      );
+      const expanded =
+        !!query ||
+        !(tagGroupCollapsed && tagGroupCollapsed.includes(tagGroup.uuid));
       return (
         <Box key={tagGroup.uuid}>
           <TagGroupTitleDnD
@@ -204,6 +226,7 @@ function TagLibrary() {
             toggleTagGroup={toggleTagGroupDispatch}
             tagGroupCollapsed={tagGroupCollapsed}
             isReadOnly={tagGroup.readOnly}
+            dndDisabled={!!query}
           />
           <CustomDragLayer />
           <Collapse in={expanded} unmountOnExit>
@@ -222,6 +245,7 @@ function TagLibrary() {
                       handleTagMenu={handleTagMenu}
                       moveTag={moveTag}
                       changeTagOrder={changeTagOrder}
+                      dndDisabled={!!query}
                     />
                   );
                 })}
@@ -265,10 +289,47 @@ function TagLibrary() {
       moveTag,
       changeTagOrder,
       selectedEntries,
+      query,
     ],
   );
 
+  const filterTagGroups = useCallback(
+    (groups: any[]) => {
+      if (!query) {
+        return groups;
+      }
+      return groups.reduce((acc: any[], tagGroup) => {
+        const groupMatches = tagGroup.title?.toLowerCase().includes(query);
+        if (groupMatches) {
+          acc.push(tagGroup);
+          return acc;
+        }
+        const children = (tagGroup.children || []).filter(
+          (tag) =>
+            tag.title?.toLowerCase().includes(query) ||
+            tag.description?.toLowerCase().includes(query),
+        );
+        if (children.length > 0) {
+          acc.push({ ...tagGroup, children });
+        }
+        return acc;
+      }, []);
+    },
+    [query],
+  );
+
   const allTags = useMemo(() => getAllTags(wSpaceTagGroups), [wSpaceTagGroups]);
+
+  const filteredSmartTags = useMemo(
+    () => (AppConfig.ExtShowSmartTags ? filterTagGroups(SmartTags(t)) : []),
+    [filterTagGroups, t],
+  );
+  const filteredTagGroups = useMemo(
+    () => filterTagGroups(wSpaceTagGroups),
+    [filterTagGroups, wSpaceTagGroups],
+  );
+  const noMatches =
+    !!query && filteredSmartTags.length === 0 && filteredTagGroups.length === 0;
 
   return (
     <Box
@@ -287,6 +348,33 @@ function TagLibrary() {
           tagCount: allTags.length,
           groupCount: wSpaceTagGroups.length,
         })}
+        titleAdornment={
+          desktopMode ? (
+            <TsIconButton
+              size="small"
+              data-tid="tagLibraryFilterTID"
+              tooltip={t('core:filterTags')}
+              onClick={toggleFilter}
+              sx={{
+                marginTop: '8px',
+                marginLeft: '6px',
+                width: 18,
+                height: 18,
+                padding: '2px',
+                borderRadius: '4px',
+                border: '1px dashed',
+                borderColor: showFilter ? 'text.primary' : 'text.disabled',
+                color: showFilter ? 'text.primary' : 'text.disabled',
+                '&:hover': {
+                  borderColor: 'text.primary',
+                  color: 'text.primary',
+                },
+              }}
+            >
+              <FilterIcon sx={{ fontSize: 13 }} />
+            </TsIconButton>
+          ) : null
+        }
         menuButton={
           (wSpaceTagGroups.some((tg) => !tg.readOnly) ||
             wSpaceTagGroups.length === 0) && (
@@ -365,6 +453,43 @@ function TagLibrary() {
           selectedTag={selectedTag}
         />
       )}
+      {showFilter && (
+        <TsTextField
+          autoFocus
+          data-tid="tagLibraryFilterInputTID"
+          value={filterQuery}
+          updateValue={(value) => setFilterQuery(value)}
+          retrieveValue={() => filterQuery}
+          onChange={(event) => setFilterQuery(event.target.value)}
+          placeholder={t('core:filterTagsPlaceholder')}
+          sx={{
+            marginBottom: '5px',
+            marginLeft: '2px',
+            '& .MuiInputBase-root': {
+              paddingRight: '4px',
+            },
+            '& .MuiInputBase-input': {
+              padding: '5px 8px',
+              fontSize: '0.85rem',
+            },
+          }}
+          slotProps={{
+            input: {
+              endAdornment: filterQuery ? (
+                <InputAdornment position="end">
+                  <TsIconButton
+                    size="small"
+                    data-tid="tagLibraryFilterClearTID"
+                    onClick={() => setFilterQuery('')}
+                  >
+                    <CloseIcon fontSize="small" />
+                  </TsIconButton>
+                </InputAdornment>
+              ) : undefined,
+            },
+          }}
+        />
+      )}
       <Box
         sx={{
           paddingTop: 0,
@@ -378,12 +503,29 @@ function TagLibrary() {
         }}
         data-tid="tagLibraryTagGroupList"
       >
-        {AppConfig.ExtShowSmartTags && (
-          <Box sx={{ paddingTop: 0, paddingBottom: 0 }}>
-            {SmartTags(t).map(renderTagGroup)}
+        {noMatches ? (
+          <Box
+            data-tid="tagLibraryFilterNoMatch"
+            sx={{
+              padding: '16px',
+              textAlign: 'center',
+              color: 'text.secondary',
+            }}
+          >
+            <Typography variant="body2">{t('core:noMatchesFound')}</Typography>
           </Box>
+        ) : (
+          <>
+            {AppConfig.ExtShowSmartTags && (
+              <Box sx={{ paddingTop: 0, paddingBottom: 0 }}>
+                {filteredSmartTags.map(renderTagGroup)}
+              </Box>
+            )}
+            <Box sx={{ paddingTop: 0 }}>
+              {filteredTagGroups.map(renderTagGroup)}
+            </Box>
+          </>
         )}
-        <Box sx={{ paddingTop: 0 }}>{wSpaceTagGroups.map(renderTagGroup)}</Box>
       </Box>
     </Box>
   );
