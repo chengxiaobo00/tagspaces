@@ -139,6 +139,8 @@ export { default as ArchiveIcon } from '@mui/icons-material/ArchiveOutlined';
 
 export { default as SearchIcon } from '@mui/icons-material/Search';
 
+export { default as FilterIcon } from '@mui/icons-material/FilterListOutlined';
+
 export { default as CloseIcon } from '@mui/icons-material/CancelOutlined';
 
 export { default as CancelIcon } from '@mui/icons-material/Cancel';

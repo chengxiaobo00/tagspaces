@@ -20,6 +20,7 @@ import AppConfig from '-/AppConfig';
 import {
   CloseIcon,
   ExportIcon,
+  FilterIcon,
   HelpIcon,
   ImportIcon,
   LocalLocationIcon,
@@ -31,6 +32,7 @@ import TsMenuList from '-/components/TsMenuList';
 import { useCurrentLocationContext } from '-/hooks/useCurrentLocationContext';
 import { useLocationIndexContext } from '-/hooks/useLocationIndexContext';
 import { Pro } from '-/pro';
+import { isDesktopMode } from '-/reducers/settings';
 import { openURLExternally } from '-/services/utils-io';
 import { TS } from '-/tagspaces.namespace';
 import { Divider } from '@mui/material';
@@ -41,17 +43,27 @@ import MenuItem from '@mui/material/MenuItem';
 import Links from 'assets/links';
 import { useContext, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSelector } from 'react-redux';
 import SidePanelTitle from '../SidePanelTitle';
 
 interface Props {
   exportLocations: () => void;
   importLocations: () => void;
   showCreateLocationDialog: () => void;
+  toggleFilter: () => void;
+  filterActive: boolean;
 }
 
 function LocationManagerMenu(props: Props) {
-  const { exportLocations, importLocations, showCreateLocationDialog } = props;
+  const {
+    exportLocations,
+    importLocations,
+    showCreateLocationDialog,
+    toggleFilter,
+    filterActive,
+  } = props;
   const { t } = useTranslation();
+  const desktopMode = useSelector(isDesktopMode);
 
   const { createLocationsIndexes } = useLocationIndexContext();
   const { closeAllLocations } = useCurrentLocationContext();
@@ -176,6 +188,33 @@ function LocationManagerMenu(props: Props) {
     <>
       <SidePanelTitle
         title={t('core:locationManager')}
+        titleAdornment={
+          desktopMode ? (
+            <TsIconButton
+              size="small"
+              data-tid="locationManagerFilterTID"
+              tooltip={t('core:filterLocations')}
+              onClick={toggleFilter}
+              sx={{
+                marginTop: '8px',
+                marginLeft: '6px',
+                width: 18,
+                height: 18,
+                padding: '2px',
+                borderRadius: '4px',
+                border: '1px dashed',
+                borderColor: filterActive ? 'text.primary' : 'text.disabled',
+                color: filterActive ? 'text.primary' : 'text.disabled',
+                '&:hover': {
+                  borderColor: 'text.primary',
+                  color: 'text.primary',
+                },
+              }}
+            >
+              <FilterIcon sx={{ fontSize: 13 }} />
+            </TsIconButton>
+          ) : null
+        }
         menuButton={
           <TsIconButton
             data-tid="locationManagerMenu"

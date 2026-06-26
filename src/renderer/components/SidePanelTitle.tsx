@@ -25,14 +25,16 @@ export type TSButtonProps = ButtonProps & {
   title: string;
   tooltip?: string;
   menuButton?: React.ReactNode;
+  titleAdornment?: React.ReactNode;
 };
 
 function SidePanelTitle(props: TSButtonProps) {
-  const { title, tooltip, menuButton, ...rest } = props;
+  const { title, tooltip, menuButton, titleAdornment, ...rest } = props;
   return (
     <div
       style={{
         display: 'flex',
+        alignItems: 'center',
         paddingRight: 5, //AppConfig.defaultSpaceBetweenButtons,
       }}
     >
@@ -42,7 +44,7 @@ function SidePanelTitle(props: TSButtonProps) {
           sx={{
             textTransform: 'uppercase',
             fontSize: '0.9rem',
-            flex: 1,
+            flex: titleAdornment ? 'none' : 1,
             paddingLeft: '7px',
             paddingTop: '12px',
           }}
@@ -50,6 +52,8 @@ function SidePanelTitle(props: TSButtonProps) {
           {title}
         </Typography>
       </TsTooltip>
+      {titleAdornment}
+      {titleAdornment && <div style={{ flex: 1 }} />}
       {menuButton && menuButton}
     </div>
   );

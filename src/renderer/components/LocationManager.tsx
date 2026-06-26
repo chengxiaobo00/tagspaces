@@ -16,10 +16,13 @@
  *
  */
 
+import { CloseIcon } from '-/components/CommonIcons';
 import LocationView from '-/components/LocationView';
 import TsButton from '-/components/TsButton';
-import { useCreateEditLocationDialogContext } from '-/components/dialogs/hooks/useCreateEditLocationDialogContext';
+import TsIconButton from '-/components/TsIconButton';
+import TsTextField from '-/components/TsTextField';
 import { SettingsTab } from '-/components/dialogs/SettingsDialog';
+import { useCreateEditLocationDialogContext } from '-/components/dialogs/hooks/useCreateEditLocationDialogContext';
 import { useSettingsDialogContext } from '-/components/dialogs/hooks/useSettingsDialogContext';
 import LocationContextMenu from '-/components/menus/LocationContextMenu';
 import LocationManagerMenu from '-/components/menus/LocationManagerMenu';
@@ -27,7 +30,7 @@ import { useCurrentLocationContext } from '-/hooks/useCurrentLocationContext';
 import { Pro } from '-/pro';
 import { getLocations } from '-/reducers/locations';
 import { TS } from '-/tagspaces.namespace';
-import { Box, List, Typography } from '@mui/material';
+import { Box, InputAdornment, List, Typography } from '@mui/material';
 import { useContext, useEffect, useRef, useState } from 'react';
 import { DragDropContext, Draggable, Droppable } from 'react-beautiful-dnd';
 import { useTranslation } from 'react-i18next';
@@ -52,6 +55,8 @@ function LocationManager(props: Props) {
   const locations: TS.Location[] = useSelector(getLocations);
   const [wSpaceLocations, setWSpaceLocations] =
     useState<TS.Location[]>(locations);
+  const [showFilter, setShowFilter] = useState<boolean>(false);
+  const [filterQuery, setFilterQuery] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const workSpacesContext = Pro?.contextProviders?.WorkSpacesContext
@@ -108,6 +113,29 @@ function LocationManager(props: Props) {
     return undefined;
   }
 
+  function toggleFilter() {
+    setShowFilter((prev) => {
+      if (prev) {
+        setFilterQuery('');
+      }
+      return !prev;
+    });
+  }
+
+  const query = filterQuery.trim().toLowerCase();
+  const filteredLocations =
+    showFilter && query
+      ? wSpaceLocations.filter((l) => {
+          const wSpace = getWorkSpace(l);
+          return (
+            (l.name && l.name.toLowerCase().includes(query)) ||
+            (wSpace?.shortName &&
+              wSpace.shortName.toLowerCase().includes(query)) ||
+            (wSpace?.fullName && wSpace.fullName.toLowerCase().includes(query))
+          );
+        })
+      : wSpaceLocations;
+
   return (
     <Box
       sx={{
@@ -133,82 +161,144 @@ function LocationManager(props: Props) {
           setSelectedLocation(undefined);
           openCreateEditLocationDialog();
         }}
+        toggleFilter={toggleFilter}
+        filterActive={showFilter}
       />
       {locationDirectoryContextMenuAnchorEl && <LocationContextMenu />}
-      <List
-        data-tid="locationList"
+      <Box
         sx={{
-          height: 'calc(100% - ' + reduceHeightBy + 'px)',
-          width: '100%',
-          borderRadius: '5px',
-          paddingTop: 0,
-          marginTop: 0,
-          overflowY: 'auto',
+          height: `calc(100% - ${reduceHeightBy}px)`,
+          display: 'flex',
+          flexDirection: 'column',
         }}
       >
-        {wSpaceLocations.length === 0 && (
-          <Box
-            data-tid="locationsEmptyState"
+        {showFilter && (
+          <TsTextField
+            autoFocus
+            data-tid="locationManagerFilterInputTID"
+            value={filterQuery}
+            updateValue={(value) => setFilterQuery(value)}
+            retrieveValue={() => filterQuery}
+            onChange={(event) => setFilterQuery(event.target.value)}
+            placeholder={t('core:filterLocationsPlaceholder')}
             sx={{
-              padding: '16px',
-              textAlign: 'center',
-              color: 'text.secondary',
+              marginBottom: '5px',
+              '& .MuiInputBase-root': {
+                paddingRight: '4px',
+              },
+              '& .MuiInputBase-input': {
+                padding: '5px 8px',
+                fontSize: '0.85rem',
+              },
             }}
-          >
-            <Typography variant="body2" sx={{ marginBottom: '12px' }}>
-              {t('peri:noLocationsYet')}
-            </Typography>
-            <TsButton
-              variant="contained"
-              data-tid="createFirstLocationTID"
-              onClick={() => {
-                setSelectedLocation(undefined);
-                openCreateEditLocationDialog();
+            slotProps={{
+              input: {
+                endAdornment: filterQuery ? (
+                  <InputAdornment position="end">
+                    <TsIconButton
+                      size="small"
+                      data-tid="locationManagerFilterClearTID"
+                      onClick={() => setFilterQuery('')}
+                    >
+                      <CloseIcon fontSize="small" />
+                    </TsIconButton>
+                  </InputAdornment>
+                ) : undefined,
+              },
+            }}
+          />
+        )}
+        <List
+          data-tid="locationList"
+          sx={{
+            flex: 1,
+            minHeight: 0,
+            width: '100%',
+            borderRadius: '5px',
+            paddingTop: 0,
+            marginTop: 0,
+            overflowY: 'auto',
+          }}
+        >
+          {wSpaceLocations.length === 0 && (
+            <Box
+              data-tid="locationsEmptyState"
+              sx={{
+                padding: '16px',
+                textAlign: 'center',
+                color: 'text.secondary',
               }}
             >
-              {t('peri:createYourFirstLocation')}
-            </TsButton>
-          </Box>
-        )}
-        <DragDropContext onDragEnd={onDragEnd}>
-          <Droppable droppableId="droppable">
-            {(provided, snapshot) => (
-              <div {...provided.droppableProps} ref={provided.innerRef}>
-                {wSpaceLocations.map((location, index) => (
-                  <Draggable
-                    key={location.uuid}
-                    draggableId={location.uuid}
-                    index={index}
-                  >
-                    {(prov, snap) => (
-                      <div
-                        ref={prov.innerRef}
-                        {...prov.draggableProps}
-                        {...prov.dragHandleProps}
-                      >
-                        <LocationView
-                          key={location.uuid + index}
-                          workspace={getWorkSpace(location)}
-                          location={{
-                            isFile: false,
-                            lmdt: 0,
-                            name: location.name,
-                            path: location.path,
-                            size: 0,
-                            locationID: location.uuid,
-                            children: [],
-                          }}
-                        />
-                      </div>
-                    )}
-                  </Draggable>
-                ))}
-                {provided.placeholder}
-              </div>
-            )}
-          </Droppable>
-        </DragDropContext>
-      </List>
+              <Typography variant="body2" sx={{ marginBottom: '12px' }}>
+                {t('peri:noLocationsYet')}
+              </Typography>
+              <TsButton
+                variant="contained"
+                data-tid="createFirstLocationTID"
+                onClick={() => {
+                  setSelectedLocation(undefined);
+                  openCreateEditLocationDialog();
+                }}
+              >
+                {t('peri:createYourFirstLocation')}
+              </TsButton>
+            </Box>
+          )}
+          {wSpaceLocations.length > 0 && filteredLocations.length === 0 && (
+            <Box
+              data-tid="locationsFilterNoMatch"
+              sx={{
+                padding: '16px',
+                textAlign: 'center',
+                color: 'text.secondary',
+              }}
+            >
+              <Typography variant="body2">
+                {t('core:noMatchesFound')}
+              </Typography>
+            </Box>
+          )}
+          <DragDropContext onDragEnd={onDragEnd}>
+            <Droppable droppableId="droppable">
+              {(provided, snapshot) => (
+                <div {...provided.droppableProps} ref={provided.innerRef}>
+                  {filteredLocations.map((location, index) => (
+                    <Draggable
+                      key={location.uuid}
+                      draggableId={location.uuid}
+                      index={index}
+                      isDragDisabled={Boolean(query)}
+                    >
+                      {(prov, snap) => (
+                        <div
+                          ref={prov.innerRef}
+                          {...prov.draggableProps}
+                          {...prov.dragHandleProps}
+                        >
+                          <LocationView
+                            key={location.uuid + index}
+                            workspace={getWorkSpace(location)}
+                            location={{
+                              isFile: false,
+                              lmdt: 0,
+                              name: location.name,
+                              path: location.path,
+                              size: 0,
+                              locationID: location.uuid,
+                              children: [],
+                            }}
+                          />
+                        </div>
+                      )}
+                    </Draggable>
+                  ))}
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
+          </DragDropContext>
+        </List>
+      </Box>
       <input
         style={{ display: 'none' }}
         ref={fileInputRef}
