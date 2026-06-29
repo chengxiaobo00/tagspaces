@@ -111,17 +111,6 @@ function CreateFile(props: Props) {
     return tid;
   }
 
-  // Stable test-id fragment per template type, e.g. selectMarkdownTemplateTID.
-  function templateTidType(type?: TS.FileType) {
-    if (type === 'md') {
-      return 'Markdown';
-    }
-    if (type === 'html') {
-      return 'Html';
-    }
-    return 'Text';
-  }
-
   const onInputFocus = (event) => {
     setTimeout(() => {
       if (fileName) {
@@ -214,7 +203,7 @@ function CreateFile(props: Props) {
                   <CardActionArea
                     disabled={noSuitableLocation}
                     onClick={() => onSelectTemplate?.(template)}
-                    data-tid={`select${templateTidType(template.type)}TemplateTID`}
+                    data-tid={`newFileTemplateTile_${template.id}`}
                   >
                     <CardContent>
                       <Box

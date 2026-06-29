@@ -187,6 +187,7 @@ function SettingsTemplates(props: Props) {
             file will get an unique name.
           </Typography>
           <TsButton
+            data-tid="addTemplateTID"
             disabled={!!AppConfig.ExtFileTemplates}
             onClick={() => {
               saveTemplate();
@@ -197,6 +198,7 @@ function SettingsTemplates(props: Props) {
             {t('addTemplate')}
           </TsButton>
           <TsButton
+            data-tid="resetTemplatesTID"
             disabled={!!AppConfig.ExtFileTemplates}
             variant="text"
             onClick={() => {
@@ -291,7 +293,7 @@ function SettingsTemplates(props: Props) {
                       editedTemplate.current.fileNameTmpl && (
                         <TsButton
                           size="small"
-                          data-tid={'save' + template.id + 'TID'}
+                          data-tid="saveTemplateTID"
                           onClick={() => saveTemplate(template.id)}
                         >
                           {t('core:save')}

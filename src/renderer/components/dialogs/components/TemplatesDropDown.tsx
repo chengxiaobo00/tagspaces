@@ -64,12 +64,13 @@ function TemplatesDropDown(props: Props) {
         fileTemplatesContext?.setTemplateActive(event.target.value)
       }
     >
-      {templates.map((tp, index) => (
-        <MenuItem value={tp.id}>
-          {
-            tp.name
-            // + (index === 0 ? ' (' + t('core:defaultTemplate') + ')' : '')
-          }
+      {templates.map((tp) => (
+        <MenuItem
+          key={tp.id}
+          value={tp.id}
+          data-tid={`templateOption_${tp.id}`}
+        >
+          {tp.name}
         </MenuItem>
       ))}
     </TsSelect>
