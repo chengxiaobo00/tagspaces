@@ -210,7 +210,12 @@ function GridCell(props: Props) {
     }
     const url = await getThumbUrl();
     setThumbSrc(url);
-  }, [gridCellLocation, fsEntry.path, fsEntry.meta, getThumbUrl]);
+    // Depend on the stable thumbnail identity (path + cache-bust key), NOT the
+    // whole `meta` object — the latter gets a new reference on every staged
+    // directory re-set (base listing -> meta -> thumbnails), which would
+    // otherwise re-resolve and visibly blank an unchanged thumbnail on reload.
+    // `lastUpdated` is covered transitively through getThumbUrl's deps.
+  }, [gridCellLocation, fsEntry.path, fsEntry.meta?.thumbPath, getThumbUrl]);
 
   useEffect(() => {
     if (isVisible) setThumbPath();

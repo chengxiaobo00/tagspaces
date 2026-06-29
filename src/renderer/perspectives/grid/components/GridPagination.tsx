@@ -497,7 +497,11 @@ function GridPagination(props: Props) {
                   renderEmptyState(t('core:noFileButFoldersFound'))}
                 {pageFiles.map((entry, index) => (
                   <CellView
-                    key={entry.uuid}
+                    // Key on the stable path, not uuid: an entry's uuid can be
+                    // regenerated across directory reloads (e.g. thumbnail meta
+                    // merges), which would remount the cell and blank/reload its
+                    // thumbnail. Path is unique within a directory and stable.
+                    key={entry.path}
                     fsEntry={entry}
                     index={index}
                     selected={selectedUuidSet.has(entry.uuid)}

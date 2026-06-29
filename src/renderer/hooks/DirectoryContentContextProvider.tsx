@@ -721,6 +721,35 @@ export const DirectoryContentContextProvider = ({
     return dirEntries;
   }
 
+  /**
+   * Layer the previously-loaded sidecar meta (tags, color, description,
+   * thumbnail) of surviving entries onto a fresh directory listing, matched by
+   * path. The fresh entry keeps its own identity/size/timestamps; the
+   * previously-displayed meta wins so the visible state (and crucially the
+   * thumbnail's `thumbPath`/`lastUpdated` cache-bust key) does not change at
+   * this stage — loadCurrentDirMeta re-resolves the authoritative meta right
+   * afterwards. New files stay bare and removed files drop out (membership
+   * follows the fresh listing). Used to avoid a flash where that meta (and the
+   * thumbnails) briefly disappears when reloading the directory already on
+   * screen.
+   */
+  function carryForwardMeta(
+    freshEntries: TS.FileSystemEntry[],
+    prevEntries: TS.FileSystemEntry[],
+  ): TS.FileSystemEntry[] {
+    if (!prevEntries || prevEntries.length === 0) {
+      return freshEntries;
+    }
+    const prevByPath = new Map(prevEntries.map((e) => [e.path, e]));
+    return freshEntries.map((e) => {
+      const prev = prevByPath.get(e.path);
+      if (prev && prev.meta) {
+        return { ...e, meta: { ...(e.meta || {}), ...prev.meta } };
+      }
+      return e;
+    });
+  }
+
   function setCurrentDirectoryEntries(dirEntries: TS.FileSystemEntry[]) {
     cancelAbort();
     if (dirEntries && dirEntries.length > 0) {
@@ -896,6 +925,7 @@ export const DirectoryContentContextProvider = ({
     directoryPath: string,
     location: CommonLocation,
     showHiddenEntries: boolean | undefined = undefined,
+    reloadMeta = false,
   ): Promise<TS.FileSystemEntry[]> {
     // Ensure selectedEntries is cleared if not empty
     if (selectedEntries.length > 0) {
@@ -950,7 +980,15 @@ export const DirectoryContentContextProvider = ({
       }
     }
 
-    setCurrentDirectoryEntries(entries);
+    // On a reload of the directory that's already on screen, keep the
+    // already-loaded sidecar meta of surviving entries so it doesn't flash away
+    // before loadCurrentDirMeta re-resolves it. loadCurrentDirMeta still runs
+    // afterwards and overwrites with the authoritative on-disk meta.
+    setCurrentDirectoryEntries(
+      reloadMeta
+        ? carryForwardMeta(entries, currentDirectoryEntries.current)
+        : entries,
+    );
 
     return entries;
   }
@@ -1122,6 +1160,7 @@ export const DirectoryContentContextProvider = ({
               dirPath,
               cLocation,
               showHiddenEntries,
+              reloadMeta,
             )
               .then((dirEntries) => {
                 if (dirEntries && reloadMeta) {
@@ -1537,7 +1576,14 @@ export const DirectoryContentContextProvider = ({
             604800,
           );
           if (thumbPath) {
-            thumbEntry.meta = { id: getUuid(), thumbPath };
+            // Carry only thumbPath. A fresh getUuid() here would clobber the
+            // entry's stable id during mergeByPath (meta.id -> uuid), churning
+            // the React key on every reload and remounting the cell — which
+            // makes the thumbnail blank and reload. Keep the entry's own id.
+            thumbEntry.meta = {
+              ...(entry.meta?.id && { id: entry.meta.id }),
+              thumbPath,
+            };
           }
         }
       } else {
@@ -1545,7 +1591,10 @@ export const DirectoryContentContextProvider = ({
           (m) => thumbPath && thumbPath.endsWith(m.path),
         );
         if (metaFile) {
-          thumbEntry.meta = { id: getUuid(), thumbPath }; //{ ...metaFile, thumbPath };
+          thumbEntry.meta = {
+            ...(entry.meta?.id && { id: entry.meta.id }),
+            thumbPath,
+          };
         }
       }
     }
