@@ -66,6 +66,16 @@ async function openTemplateGrid() {
   await expectElementExist('[data-tid=newFileDialog]', true, 5000);
 }
 
+/**
+ * Opens the templates management view (Settings -> Templates) and waits for the
+ * default Markdown template accordion to be present.
+ */
+async function openManageTemplates() {
+  await clickOn('[data-tid=settings]');
+  await clickOn('[data-tid=templatesDialogTID]');
+  await expectElementExist('[data-tid=templateMdTemplateTID]', true, 5000);
+}
+
 test.describe('TST74 - File templates', () => {
   test('TST7401 - Create file by picking a template tile [electron,_pro]', async () => {
     await createNewDirectory(testFolder);
@@ -223,6 +233,91 @@ test.describe('TST74 - File templates', () => {
       })
       .toBe(baseTiles);
     await clickOn('[data-tid=closeNewFileDialogTID]');
+
+    await deleteDirectory(testFolder);
+  });
+
+  test('TST7411 - Manage templates: editing a template (incl. description) persists [electron,_pro]', async () => {
+    // The name field is single-line (input); content/description are multiline
+    // (textarea). MUI renders a hidden shadow textarea for autosize, so target
+    // the real one explicitly.
+    const nameSelector = '[data-tid=templateName_templateMdTID] input';
+    const descSelector =
+      '[data-tid=templateDescription_templateMdTID] textarea:not([aria-hidden="true"])';
+    const newName = 'Edited Markdown';
+    const newDescription = 'Edited template description for e2e';
+
+    // Open Settings -> Templates and expand the Markdown template. Click the
+    // expand icon specifically — the summary center can land on the remove
+    // button (which stops propagation and would fire a delete confirm).
+    await openManageTemplates();
+    await clickOn(
+      '[data-tid=templateMdTemplateTID] .MuiAccordionSummary-expandIconWrapper',
+    );
+    await global.client
+      .locator(descSelector)
+      .waitFor({ state: 'visible', timeout: 5000 });
+
+    // Edit the name + description and save.
+    await setInputValue(nameSelector, newName);
+    await setInputValue(descSelector, newDescription);
+    await clickOn('[data-tid=saveTemplateTID]');
+    await clickOn('[data-tid=closeSettingsDialog]');
+
+    // Reopen, expand again and assert both edits persisted.
+    await openManageTemplates();
+    await clickOn(
+      '[data-tid=templateMdTemplateTID] .MuiAccordionSummary-expandIconWrapper',
+    );
+    await global.client
+      .locator(descSelector)
+      .waitFor({ state: 'visible', timeout: 5000 });
+    await expect
+      .poll(async () => global.client.locator(nameSelector).inputValue(), {
+        timeout: 5000,
+        message: 'edited template name should persist',
+      })
+      .toBe(newName);
+    await expect
+      .poll(async () => global.client.locator(descSelector).inputValue(), {
+        timeout: 5000,
+        message: 'edited template description should persist',
+      })
+      .toBe(newDescription);
+
+    // Restore defaults to keep state clean for following tests.
+    await clickOn('[data-tid=resetTemplatesTID]');
+    await clickOn('[data-tid=closeSettingsDialog]');
+  });
+
+  test('TST7412 - Manage templates: deleting a template removes it [electron,_pro]', async () => {
+    // The plain-text template exists by default.
+    await openManageTemplates();
+    await expectElementExist('[data-tid=templateTxtTemplateTID]', true, 5000);
+
+    // The remove button triggers a native confirm() dialog — accept it.
+    global.client.once('dialog', (dialog) => dialog.accept());
+    await clickOn('[data-tid=removeTemplate_templateTxtTID]');
+
+    // The template accordion disappears.
+    await expectElementExist('[data-tid=templateTxtTemplateTID]', false, 5000);
+    await clickOn('[data-tid=closeSettingsDialog]');
+
+    // It also disappears from the create-from-template tile grid.
+    await createNewDirectory(testFolder);
+    await openFolder(testFolder);
+    await openTemplateGrid();
+    await expectElementExist(
+      '[data-tid=newFileTemplateTile_templateTxt]',
+      false,
+      2000,
+    );
+    await clickOn('[data-tid=closeNewFileDialogTID]');
+
+    // Restore defaults for the following tests.
+    await openManageTemplates();
+    await clickOn('[data-tid=resetTemplatesTID]');
+    await clickOn('[data-tid=closeSettingsDialog]');
 
     await deleteDirectory(testFolder);
   });

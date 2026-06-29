@@ -282,7 +282,7 @@ function SettingsTemplates(props: Props) {
                     deleteTemplate(template.id);
                   }
                 }}
-                data-tid="removeAIProviderTID"
+                data-tid={'removeTemplate_' + template.id + 'TID'}
               >
                 <RemoveIcon />
               </TsIconButton>
@@ -313,6 +313,7 @@ function SettingsTemplates(props: Props) {
             <AccordionDetails>
               <TsTextField
                 fullWidth
+                data-tid={'templateName_' + template.id + 'TID'}
                 disabled={!Pro || !!AppConfig.ExtFileTemplates}
                 label={t('name')}
                 error={!currentTemplate(template).name}
@@ -337,6 +338,7 @@ function SettingsTemplates(props: Props) {
                 fullWidth
                 multiline
                 rows={2}
+                data-tid={'templateDescription_' + template.id + 'TID'}
                 disabled={!Pro || !!AppConfig.ExtFileTemplates}
                 label={t('core:templateDescription')}
                 value={currentTemplate(template).description || ''}
@@ -407,6 +409,7 @@ function SettingsTemplates(props: Props) {
                 fullWidth
                 multiline
                 rows={5}
+                data-tid={'templateContent_' + template.id + 'TID'}
                 disabled={!Pro || !!AppConfig.ExtFileTemplates}
                 label={t('core:templateContent')}
                 value={currentTemplate(template).content}
@@ -423,6 +426,7 @@ function SettingsTemplates(props: Props) {
               />
               <TsTextField
                 fullWidth
+                data-tid={'templateFileName_' + template.id + 'TID'}
                 disabled={!Pro || !!AppConfig.ExtFileTemplates}
                 error={!currentTemplate(template).fileNameTmpl}
                 label={t('fileNameTmpl')}
