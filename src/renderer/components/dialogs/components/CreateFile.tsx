@@ -29,7 +29,7 @@ import useFirstRender from '-/utils/useFirstRender';
 import {
   Box,
   Card,
-  CardActions,
+  CardActionArea,
   CardContent,
   FormControl,
   Typography,
@@ -55,6 +55,12 @@ interface Props {
   tidPrefix?: string;
   fileType?: TS.FileType;
   onClose: (event?: Object, reason?: string) => void;
+  /**
+   * Called when a template tile is clicked. The parent loads the template's
+   * name + content into the editable form instead of creating the file
+   * immediately.
+   */
+  onSelectTemplate?: (template: TS.FileTemplate) => void;
 }
 
 function CreateFile(props: Props) {
@@ -68,6 +74,7 @@ function CreateFile(props: Props) {
     handleFileContentChange,
     haveError,
     onClose,
+    onSelectTemplate,
   } = props;
   const { t } = useTranslation();
   const { targetDirectoryPath } = useTargetPathContext();
@@ -102,6 +109,17 @@ function CreateFile(props: Props) {
       return tidPrefix + tid;
     }
     return tid;
+  }
+
+  // Stable test-id fragment per template type, e.g. selectMarkdownTemplateTID.
+  function templateTidType(type?: TS.FileType) {
+    if (type === 'md') {
+      return 'Markdown';
+    }
+    if (type === 'html') {
+      return 'Html';
+    }
+    return 'Text';
   }
 
   const onInputFocus = (event) => {
@@ -186,9 +204,62 @@ function CreateFile(props: Props) {
         </>
       ) : (
         <Box sx={{ flexGrow: 1 }}>
+          <Grid container spacing={2}>
+            {templatesArray?.map((template: TS.FileTemplate, index) => (
+              <Grid key={index} size={6}>
+                <Card
+                  variant="outlined"
+                  sx={{ borderRadius: `${AppConfig.defaultCSSRadius}px` }}
+                >
+                  <CardActionArea
+                    disabled={noSuitableLocation}
+                    onClick={() => onSelectTemplate?.(template)}
+                    data-tid={`select${templateTidType(template.type)}TemplateTID`}
+                  >
+                    <CardContent>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          flexWrap: 'nowrap',
+                          alignItems: 'anchor-center',
+                        }}
+                      >
+                        <Typography variant="h6">{template.name}</Typography>
+                        <Box
+                          sx={{
+                            marginLeft: '5px',
+                            padding: '2px',
+                            fontSize: '12px',
+                            textTransform: 'uppercase',
+                            border: '1px solid gray',
+                            borderRadius: '3px',
+                            height: '13px',
+                          }}
+                        >
+                          {template.type}
+                        </Box>
+                      </Box>
+                      <Typography
+                        variant="body2"
+                        title={template.content}
+                        sx={{
+                          maxHeight: '75px',
+                          height: '75px',
+                          overflowY: 'auto',
+                        }}
+                      >
+                        {template.description || template.content}
+                      </Typography>
+                    </CardContent>
+                  </CardActionArea>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
           <TsButton
             size="small"
             variant="text"
+            sx={{ marginTop: '10px' }}
             onClick={() => {
               onClose();
               openSettingsDialog(SettingsTab.Templates);
@@ -197,68 +268,6 @@ function CreateFile(props: Props) {
           >
             {t('manageTemplates')}
           </TsButton>
-          <Grid container spacing={2}>
-            {templatesArray?.map((template: TS.FileTemplate, index) => (
-              <Grid key={index} size={6}>
-                <Card variant="outlined">
-                  <CardContent>
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        flexWrap: 'nowrap',
-                        alignItems: 'anchor-center',
-                      }}
-                    >
-                      <Typography variant="h6">{template.name}</Typography>
-                      <Box
-                        sx={{
-                          marginLeft: '5px',
-                          padding: '2px',
-                          fontSize: '12px',
-                          textTransform: 'uppercase',
-                          border: '1px solid gray',
-                          borderRadius: '3px',
-                          height: '13px',
-                        }}
-                      >
-                        {template.type}
-                      </Box>
-                    </Box>
-                    <Typography
-                      variant="body2"
-                      title={template.content}
-                      sx={{
-                        maxHeight: '75px',
-                        height: '75px',
-                        overflowY: 'auto',
-                      }}
-                    >
-                      {template.description || template.content}
-                    </Typography>
-                  </CardContent>
-                  <CardActions>
-                    <TsButton
-                      size="small"
-                      sx={{
-                        marginLeft: '10px',
-                        marginBottom: '10px',
-                        marginTop: '-10px',
-                      }}
-                      onClick={() => createFile(template.type, template)}
-                      data-tid={
-                        'create' +
-                        (template.type === 'md' ? 'Markdown' : template.type) +
-                        'Button'
-                      }
-                      disabled={noSuitableLocation}
-                    >
-                      {t('useTemplate')}
-                    </TsButton>
-                  </CardActions>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
         </Box>
       )}
     </Grid>

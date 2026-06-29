@@ -53,7 +53,7 @@ import {
   generateFileName,
 } from '@tagspaces/tagspaces-common/paths';
 import { getUuid } from '@tagspaces/tagspaces-common/utils-io';
-import { useContext, useEffect, useReducer, useRef } from 'react';
+import { useContext, useEffect, useReducer, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
 
@@ -89,10 +89,24 @@ function NewFileDialog(props: Props) {
   const [ignored, forceUpdate] = useReducer((x) => x + 1, 0, undefined);
   const theme = useTheme();
   const smallScreen = useMediaQuery(theme.breakpoints.down('md'));
-  const fileTemplate = fileTemplatesContext?.getTemplate(fileType);
+  const firstRender = useFirstRender();
+  // Template selected from the tile grid (when the dialog is opened without a
+  // fixed fileType). Selecting a tile loads its name + content into the
+  // editable form below instead of creating the file immediately.
+  const [selectedTemplate, setSelectedTemplate] = useState<TS.FileTemplate>();
+
+  // The effective type drives the editable form: either the type the dialog
+  // was opened with, or the type of the template picked from the grid.
+  const effectiveFileType = fileType ?? selectedTemplate?.type;
+  // Active template for the effective type. This also reflects the in-form
+  // "change template" dropdown, which calls setTemplateActive. Deriving it from
+  // effectiveFileType (not the raw fileType prop) is what lets the dropdown
+  // reload the editable name + content during the grid-selected phase.
+  const fileTemplate = fileTemplatesContext?.getTemplate(
+    effectiveFileType as TS.FileType,
+  );
   const fileNameRef = useRef<string>(getFileName());
   const fileContentRef = useRef<string>(getFileContent());
-  const firstRender = useFirstRender();
 
   useEffect(() => {
     if (
@@ -103,9 +117,52 @@ function NewFileDialog(props: Props) {
     ) {
       fileNameRef.current = getFileName();
       fileContentRef.current = getFileContent();
-      forceUpdate();
+      // In grid-selected mode the dropdown switches the active template; keep
+      // the dialog title + selection in sync with it.
+      if (
+        !fileType &&
+        selectedTemplate &&
+        selectedTemplate.id !== fileTemplate.id
+      ) {
+        setSelectedTemplate(fileTemplate);
+      } else {
+        forceUpdate();
+      }
     }
   }, [fileTemplate]);
+
+  // Reset to the template grid (and refresh the editable defaults) whenever the
+  // dialog is (re)opened — the dialog stays mounted via keepMounted, so state
+  // would otherwise leak between openings.
+  useEffect(() => {
+    if (open) {
+      setSelectedTemplate(undefined);
+      fileNameRef.current = getFileName();
+      fileContentRef.current = getFileContent();
+      haveError.current = false;
+      urlInputError.current = undefined;
+    }
+  }, [open]);
+
+  function selectTemplate(template: TS.FileTemplate) {
+    // Make the clicked template the active one for its type so the in-form
+    // "change template" dropdown shows it as selected.
+    fileTemplatesContext?.setTemplateActive(template.id);
+    fileNameRef.current =
+      template.fileNameTmpl !== undefined
+        ? getFileNameFromTemplate(template)
+        : getFileName();
+    fileContentRef.current = getFileContentFromTemplate(template);
+    haveError.current = false;
+    setSelectedTemplate(template);
+  }
+
+  function backToTemplates() {
+    fileNameRef.current = getFileName();
+    fileContentRef.current = getFileContent();
+    haveError.current = false;
+    setSelectedTemplate(undefined);
+  }
 
   function getFileName() {
     if (fileName) {
@@ -168,6 +225,9 @@ function NewFileDialog(props: Props) {
   }
 
   function getFileType() {
+    if (selectedTemplate) {
+      return selectedTemplate.name || t('createNewFromTemplate');
+    }
     if (fileType === 'txt') {
       return t('createTXTFile');
     }
@@ -219,9 +279,9 @@ function NewFileDialog(props: Props) {
       data-tid="createTID"
       variant="contained"
       onClick={() => {
-        createFile(fileType, targetDirectoryPath);
+        createFile(effectiveFileType, targetDirectoryPath);
       }}
-      disabled={haveError.current}
+      disabled={haveError.current || !effectiveFileType}
       sx={
         {
           WebkitAppRegion: 'no-drag',
@@ -246,7 +306,7 @@ function NewFileDialog(props: Props) {
         dialogTitle={getFileType()}
         onClose={onClose}
         closeButtonTestId="closeNewFileDialogTID"
-        actionSlot={okButton}
+        actionSlot={effectiveFileType ? okButton : undefined}
       ></TsDialogTitle>
       <DialogContent
         sx={{
@@ -273,7 +333,8 @@ function NewFileDialog(props: Props) {
           />
         ) : (
           <CreateFile
-            fileType={fileType}
+            fileType={effectiveFileType}
+            onSelectTemplate={selectTemplate}
             createFile={(type, template) =>
               createFile(type, targetDirectoryPath, template)
             }
@@ -292,16 +353,22 @@ function NewFileDialog(props: Props) {
         )}
         <TargetPath />
       </DialogContent>
-      {!smallScreen && fileType && (
+      {!smallScreen && effectiveFileType && (
         <TsDialogActions>
-          <TsButton
-            data-tid="backTID"
-            onClick={() => {
-              onClose();
-            }}
-          >
-            {t('core:cancel')}
-          </TsButton>
+          {!fileType && selectedTemplate ? (
+            <TsButton data-tid="backToTemplatesTID" onClick={backToTemplates}>
+              {t('core:goback')}
+            </TsButton>
+          ) : (
+            <TsButton
+              data-tid="backTID"
+              onClick={() => {
+                onClose();
+              }}
+            >
+              {t('core:cancel')}
+            </TsButton>
+          )}
           {okButton}
         </TsDialogActions>
       )}
