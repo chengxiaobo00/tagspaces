@@ -236,6 +236,12 @@ function StoredSearches(props: Props) {
           updateValue={(value) => setFilterQuery(value)}
           retrieveValue={() => filterQuery}
           onChange={(event) => setFilterQuery(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') {
+              event.stopPropagation();
+              toggleFilter();
+            }
+          }}
           placeholder={t('core:filterQuickAccessPlaceholder')}
           sx={{
             marginBottom: '5px',

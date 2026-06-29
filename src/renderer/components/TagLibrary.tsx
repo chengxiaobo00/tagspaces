@@ -461,6 +461,12 @@ function TagLibrary() {
           updateValue={(value) => setFilterQuery(value)}
           retrieveValue={() => filterQuery}
           onChange={(event) => setFilterQuery(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') {
+              event.stopPropagation();
+              toggleFilter();
+            }
+          }}
           placeholder={t('core:filterTagsPlaceholder')}
           sx={{
             marginBottom: '5px',
