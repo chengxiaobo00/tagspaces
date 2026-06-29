@@ -333,6 +333,25 @@ function SettingsTemplates(props: Props) {
                   {t('core:templateNameEmptyError')}
                 </FormHelperText>
               )}
+              <TsTextField
+                fullWidth
+                multiline
+                rows={2}
+                disabled={!Pro || !!AppConfig.ExtFileTemplates}
+                label={t('core:templateDescription')}
+                value={currentTemplate(template).description || ''}
+                sx={{ marginTop: '10px' }}
+                onChange={(e) => {
+                  if (fileTemplatesContext) {
+                    editedTemplate.current = {
+                      ...template,
+                      ...editedTemplate.current,
+                      description: e.target.value,
+                    };
+                    forceUpdate();
+                  }
+                }}
+              />
               <ToggleButtonGroup
                 value={currentTemplate(template).type}
                 exclusive

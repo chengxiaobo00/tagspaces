@@ -1015,6 +1015,7 @@
   "addTemplate": "Create New Template",
   "resetTemplates": "Reset Templates",
   "templateContent": "Template Content",
+  "templateDescription": "Template Description",
   "fileNameTmpl": "File Name Template",
   "useTemplate": "Use this template",
   "templateNameEmptyError": "Template name can't be empty",
