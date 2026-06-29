@@ -198,7 +198,7 @@ function CreateFile(props: Props) {
               <Grid key={index} size={6}>
                 <Card
                   variant="outlined"
-                  sx={{ borderRadius: `${AppConfig.defaultCSSRadius}px` }}
+                  sx={{ borderRadius: AppConfig.defaultCSSRadius }}
                 >
                   <CardActionArea
                     disabled={noSuitableLocation}
