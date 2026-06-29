@@ -57,7 +57,7 @@ src/
   locales/          # Language translation files
   node_modules/     # TagSpaces extension modules
 
-cordova/            # Deprecated Android build
+capacitor/          # Mobile (Android/iOS) build
 dll/                # Live reload support for development
 docker/             # Docker container setup
 internals/          # Flow and ESLint configurations
@@ -131,12 +131,13 @@ The commands will create packages for Windows, Linux, Mac OS and Mac OS with the
 
 > ⚠️ Run npm run build before packaging.
 
-### 📱 Android Build (Deprecated)
+### 📱 Mobile Build (Capacitor)
+
+Build and run the Android or iOS app via Capacitor:
 
 ```bash
-npm run version-meta
-npm run prepare-cordova
-npm run package-android
+npm run run-android-cap
+npm run run-ios-cap
 ```
 
 ### 🌐 Web Version

@@ -138,7 +138,7 @@ function LocalForm(props: Props) {
             }}
             label={t('core:createLocationPath') + ' *'}
           />
-          {(AppConfig.isCordovaAndroid || AppConfig.isCapacitorAndroid) && (
+          {AppConfig.isCapacitorAndroid && (
             <FormHelperText>
               Examples: sdcard/DCIM, sdcard/Downloads or /storage/899D-1617 for
               ext. sd-card

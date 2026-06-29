@@ -30,10 +30,10 @@ import AppConfig from '-/AppConfig';
  *
  * This snaps the document back to the top whenever it drifts, but deliberately
  * NOT while a field is being edited, so we don't fight iOS scrolling a focused
- * input into view. iOS-only (Capacitor or Cordova); a no-op everywhere else.
+ * input into view. iOS-only (Capacitor); a no-op everywhere else.
  */
 export function installIosScrollGuard(): void {
-  if (!(AppConfig.isCapacitoriOS || AppConfig.isCordovaiOS)) return;
+  if (!AppConfig.isCapacitoriOS) return;
 
   const isEditing = (): boolean => {
     const el = document.activeElement as HTMLElement | null;

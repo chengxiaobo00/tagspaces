@@ -70,9 +70,6 @@ declare interface Window {
   ExtAutoSaveEnabled?: boolean;
   ExtAI?: ExternalAI;
   __REDUX_DEVTOOLS_EXTENSION_COMPOSE__?: any;
-  plugins?: any; // needed for Cordova
-  resolveLocalFileSystemURL?: any; // needed for Cordova
-  device?: any; // needed for Cordova
   ExtSupportedFileTypes?: Array<any>;
   ExtExtensionsFound?: Array<any>;
   ExtSearchTypeGroups?: any;

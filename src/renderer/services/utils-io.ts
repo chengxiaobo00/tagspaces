@@ -486,9 +486,9 @@ export function getLastVersionPromise(signal?: AbortSignal): Promise<string> {
     // descriptor and Android to the Linux one (the isAndroid branch was dead).
     if (AppConfig.isWeb) {
       versionFile = 'tagspaces-pro-web.json';
-    } else if (AppConfig.isCapacitoriOS || AppConfig.isCordovaiOS) {
+    } else if (AppConfig.isCapacitoriOS) {
       versionFile = 'tagspaces-' + proText + 'ios.json';
-    } else if (AppConfig.isCapacitorAndroid || AppConfig.isCordovaAndroid) {
+    } else if (AppConfig.isCapacitorAndroid) {
       versionFile = 'tagspaces-' + proText + 'android.json';
     } else if (AppConfig.isWin) {
       versionFile =
@@ -926,7 +926,7 @@ export function openUrl(url: string): void {
     const ioAPI = require('-/services/io-capacitor');
     ioAPI.openUrl(url);
   } else {
-    // web or cordova
+    // web
     openUrlForWeb(url);
   }
 }
@@ -1187,9 +1187,6 @@ export function getDevicePaths(): Promise<any> {
   } else if (AppConfig.isCapacitor) {
     const ioAPI = require('-/services/io-capacitor');
     return ioAPI.getDevicePaths();
-  } else if (AppConfig.isCordova) {
-    const ioAPI = require('@tagspaces/tagspaces-common-cordova');
-    return ioAPI.getDevicePaths();
   } else {
     console.log('getDevicePaths not supported');
     return Promise.resolve(undefined);
@@ -1283,74 +1280,32 @@ export function downloadFile(
     return ioAPI.downloadFile(fileName, fileUrl);
   }
 
-  if (AppConfig.isNativeMobile) {
-    if (fileUrl) {
-      const downloadCordova = (uri, filename) => {
-        const { Downloader } = window.plugins;
-
-        const downloadSuccessCallback = (result) => {
-          // result is an object
-          /* {
-            path: "file:///storage/sdcard0/documents/My Pdf.pdf", // Returns full file path
-            file: "My Pdf.pdf", // Returns Filename
-            folder: "documents" // Returns folder name
-          } */
-          console.log(result.file); // My Pdf.pdf
-        };
-
-        const downloadErrorCallback = (error) => {
-          console.log(error);
-        };
-
-        const options = {
-          title: 'Downloading File:' + filename, // Download Notification Title
-          url: uri, // File Url
-          path: filename, // The File Name with extension
-          description: 'The file is downloading', // Download description Notification String
-          visible: true, // This download is visible and shows in the notifications while in progress and after completion.
-          folder: 'documents', // Folder to save the downloaded file, if not exist it will be created
-        };
-
-        Downloader.download(
-          options,
-          downloadSuccessCallback,
-          downloadErrorCallback,
-        );
-      };
-      downloadCordova(fileUrl, entryName);
+  const downloadLink = document.getElementById('downloadFile');
+  if (downloadLink) {
+    if (AppConfig.isWeb) {
+      // eslint-disable-next-line no-restricted-globals
+      const { protocol } = location;
+      // eslint-disable-next-line no-restricted-globals
+      const { hostname } = location;
+      // eslint-disable-next-line no-restricted-globals
+      const { port } = location;
+      const link = `${protocol}//${hostname}${
+        port !== '' ? `:${port}` : ''
+      }/${filePath}`;
+      downloadLink.setAttribute('href', link);
     } else {
-      console.log('Can only download HTTP/HTTPS URIs');
-      return -1;
-      //showNotification(t('core:cantDownloadLocalFile'));
+      downloadLink.setAttribute('href', `file:///${filePath}`);
     }
-  } else {
-    const downloadLink = document.getElementById('downloadFile');
-    if (downloadLink) {
-      if (AppConfig.isWeb) {
-        // eslint-disable-next-line no-restricted-globals
-        const { protocol } = location;
-        // eslint-disable-next-line no-restricted-globals
-        const { hostname } = location;
-        // eslint-disable-next-line no-restricted-globals
-        const { port } = location;
-        const link = `${protocol}//${hostname}${
-          port !== '' ? `:${port}` : ''
-        }/${filePath}`;
-        downloadLink.setAttribute('href', link);
-      } else {
-        downloadLink.setAttribute('href', `file:///${filePath}`);
-      }
 
-      if (fileUrl) {
-        // mostly the s3 case
-        downloadLink.setAttribute('target', '_blank');
-        downloadLink.setAttribute('href', fileUrl);
-      }
-
-      downloadLink.setAttribute('download', fileName); // works only for same origin
-      downloadLink.click();
-      return 0;
+    if (fileUrl) {
+      // mostly the s3 case
+      downloadLink.setAttribute('target', '_blank');
+      downloadLink.setAttribute('href', fileUrl);
     }
+
+    downloadLink.setAttribute('download', fileName); // works only for same origin
+    downloadLink.click();
+    return 0;
   }
   return 1;
 }
@@ -1360,9 +1315,6 @@ export function selectDirectoryDialog(): Promise<any> {
     return window.electronIO.ipcRenderer.invoke('selectDirectoryDialog');
   } else if (AppConfig.isCapacitor) {
     const ioAPI = require('-/services/io-capacitor');
-    return ioAPI.selectDirectoryDialog();
-  } else if (AppConfig.isCordova) {
-    const ioAPI = require('@tagspaces/tagspaces-common-cordova');
     return ioAPI.selectDirectoryDialog();
   }
   return Promise.reject(new Error('selectDirectoryDialog: not implemented'));

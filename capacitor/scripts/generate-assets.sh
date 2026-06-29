@@ -244,37 +244,6 @@ cat > "$IOS_SPLASH_DIR/Contents.json" << 'SPLASHJSON'
 SPLASHJSON
 
 # ============================================================
-# Cordova: Update icons too (if directory exists)
-# ============================================================
-echo ""
-echo "=== Cordova: Icons ==="
-
-CORDOVA_ANDROID="$PROJECT_DIR/../cordova/res/icon/android"
-CORDOVA_IOS="$PROJECT_DIR/../cordova/res/icon/ios"
-
-if [ -d "$CORDOVA_ANDROID" ]; then
-  for density_size in mdpi:48 hdpi:72 xhdpi:96 xxhdpi:144 xxxhdpi:192; do
-    density="${density_size%%:*}"
-    size="${density_size##*:}"
-    mkdir -p "$CORDOVA_ANDROID/mipmap-$density"
-    $CONVERT "$TMPDIR/icon-1024.png" -resize "${size}x${size}" "$CORDOVA_ANDROID/mipmap-$density/ic_launcher.png"
-  done
-  echo "  Updated Cordova Android icons"
-else
-  echo "  Skipped (cordova/res not found)"
-fi
-
-if [ -d "$CORDOVA_IOS" ]; then
-  $CONVERT "$TMPDIR/icon-1024.png" -resize 57x57   "$CORDOVA_IOS/icon-57.png"
-  $CONVERT "$TMPDIR/icon-1024.png" -resize 114x114  "$CORDOVA_IOS/icon-57-2x.png"
-  $CONVERT "$TMPDIR/icon-1024.png" -resize 72x72    "$CORDOVA_IOS/icon-72.png"
-  $CONVERT "$TMPDIR/icon-1024.png" -resize 144x144  "$CORDOVA_IOS/icon-72-2x.png"
-  echo "  Updated Cordova iOS icons"
-else
-  echo "  Skipped (cordova/res not found)"
-fi
-
-# ============================================================
 echo ""
 echo "=== Done! ==="
 echo ""

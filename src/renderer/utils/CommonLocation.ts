@@ -18,7 +18,6 @@ import { getUuid, loadJSONString } from '@tagspaces/tagspaces-common/utils-io';
 import { getFulfilledResults, getMimeType } from '-/services/utils-io';
 import { TS } from '-/tagspaces.namespace';
 import { offlineRejectionIfRemote } from '-/utils/OfflineError';
-import * as cordovaIO from '@tagspaces/tagspaces-common-cordova';
 import * as capacitorIO from '-/services/io-capacitor';
 
 /**
@@ -121,8 +120,6 @@ export class CommonLocation implements TS.Location {
       // TODO impl
     } else if (AppConfig.isCapacitor) {
       this.ioAPI = capacitorIO;
-    } else if (AppConfig.isCordova) {
-      this.ioAPI = cordovaIO;
     }
   }
 
@@ -1009,10 +1006,8 @@ export class CommonLocation implements TS.Location {
   shareFiles = (files: Array<string>): void => {
     if (AppConfig.isCapacitor) {
       capacitorIO.shareFiles(files);
-    } else if (AppConfig.isCordova) {
-      cordovaIO.shareFiles(files);
     } else {
-      console.log('shareFiles is implemented in Cordova/Capacitor only.');
+      console.log('shareFiles is implemented in Capacitor only.');
     }
   };
 

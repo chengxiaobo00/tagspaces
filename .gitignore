@@ -48,17 +48,6 @@ main.js.map
 .vscode
 npm-debug.log.*
 
-# Cordova files
-cordova/node_modules/*
-cordova/www/*
-!cordova/www/index.html
-
-cordova/platforms/android/.gradle/*
-cordova/platforms/android/CordovaLib/build/*
-cordova/platforms/android/assets/www/*
-cordova/platforms/android/app/src/main/assets/www/*
-cordova/plugins/**/*
-
 extensions
 
 test/file-structure
@@ -119,8 +108,6 @@ web/sw-con
 /src/renderer/aws-exports.js
 /src/renderer/graphql/*
 /src/renderer/models/*
-cordova/platforms/ios/www/yarn.lock
-cordova/platforms/ios/www/package.json
 junit.xml
 test-reports/*
 test-results/*

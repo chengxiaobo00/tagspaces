@@ -388,7 +388,7 @@ function GridCell(props: Props) {
   const handleCellClick = useCallback(
     (event: React.MouseEvent) => {
       event.stopPropagation();
-      AppConfig.isCordovaiOS || AppConfig.isCapacitoriOS
+      AppConfig.isCapacitoriOS
         ? handleGridCellDblClick(event, fsEntry)
         : handleGridCellClick(event, fsEntry);
     },

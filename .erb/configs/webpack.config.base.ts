@@ -44,7 +44,7 @@ const configuration: webpack.Configuration = {
       // resolution otherwise fails them (broke build:dll and the prod renderer
       // build). Lives in the base config so every config that merges it —
       // renderer dev/prod, main, and the DLL (which borrows renderer.dev's
-      // merged module) — inherits the fix. (cordova/capacitor/web carry their
+      // merged module) — inherits the fix. (capacitor/web carry their
       // own equivalent copy.)
       {
         test: /\.m?js/,

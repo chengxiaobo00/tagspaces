@@ -42,7 +42,7 @@ export const FullScreenContextProvider = ({
   // at all: we just flip `isFullscreen` and FileView styles its container as a
   // fixed, full-viewport overlay (CSS fullscreen). No native frame change → no
   // inset bug. Everywhere else keeps the real Fullscreen API via fscreen.
-  const useCssFullscreen = AppConfig.isCapacitoriOS || AppConfig.isCordovaiOS;
+  const useCssFullscreen = AppConfig.isCapacitoriOS;
 
   const toggleFullScreen = useCallback(
     (element: HTMLDivElement) => {

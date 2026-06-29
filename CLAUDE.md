@@ -112,7 +112,7 @@ tagspaces-common-node (Node.js fs implementation, injected as IO provider)
 - **Core logic** lives in `tagspaces-common`. See [../tagspaces-common/CLAUDE.md](../tagspaces-common/CLAUDE.md) for the indexing format (tsi.json + tsft.jsonl), CJK tokenization, PDF extraction details, etc.
 - **Renderer integration**: `src/renderer/hooks/LocationIndexContextProvider.tsx` — orchestrates create/load/search. Two code paths:
   - **Worker path**: Electron-only. Renderer → IPC → Electron main → HTTP POST to local WS server (pm2-managed). Used when `isWorkerAvailable() && enableWS && !objectStore && !webdav && !nativeMobile`.
-  - **Non-worker path** (`createNotWorkerIndex`): Everything else — S3, WebDAV, Cordova, Capacitor, web app, and Electron with WS disabled. Runs in renderer thread.
+  - **Non-worker path** (`createNotWorkerIndex`): Everything else — S3, WebDAV, Capacitor, web app, and Electron with WS disabled. Runs in renderer thread.
 - **Search logic** lives in `@tagspaces/tagspaces-search` (pure JS, works on all platforms). The renderer's `src/renderer/services/search.ts` is a thin wrapper.
 
 ### Renderer gotchas
@@ -262,11 +262,11 @@ npx playwright test --project=electron-s3 folder.pw.e2e.js
 
 ### Structure
 
-- **Capacitor project**: `capacitor/` (parallel to `cordova/`, both can coexist)
+- **Capacitor project**: `capacitor/` (sole native-mobile target; the legacy `cordova/` build was removed)
 - **IO module**: `src/renderer/services/io-capacitor.ts` (was external `@tagspaces/tagspaces-common-capacitor`; moved in-tree to drop the cross-repo symlink dance — single consumer, no other tool depends on it). Has `@ts-nocheck` for now; incremental typing is a future cleanup.
 - **Webpack configs**: `.erb/configs/webpack.config.capacitor.prod.ts` / `.dev.ts`
 - **Custom plugins**: `capacitor/android/app/src/main/java/org/tagspaces/plugins/` (StoragePermission, IntentHandler)
-- **Platform detection**: `AppConfig.isCapacitor`, `AppConfig.isCapacitorAndroid`, `AppConfig.isCapacitoriOS`, `AppConfig.isNativeMobile` (unified Cordova+Capacitor flag)
+- **Platform detection**: `AppConfig.isCapacitor`, `AppConfig.isCapacitorAndroid`, `AppConfig.isCapacitoriOS`, `AppConfig.isNativeMobile` (Capacitor native-mobile flag)
 
 ### Build & Run
 

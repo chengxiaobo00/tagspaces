@@ -223,8 +223,7 @@ function FileView(props: Props) {
   // stale inset after exit). When fullscreen there, turn the container into a
   // fixed, full-viewport overlay above the app chrome instead of relying on the
   // :fullscreen pseudo-class. Other platforms use the real Fullscreen API.
-  const cssFullscreen =
-    isFullscreen && (AppConfig.isCapacitoriOS || AppConfig.isCordovaiOS);
+  const cssFullscreen = isFullscreen && AppConfig.isCapacitoriOS;
 
   // `position: fixed` is contained — not viewport-relative — by any ancestor
   // with `contain`/`transform`/`filter`/`perspective`/`will-change` (the

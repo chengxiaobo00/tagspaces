@@ -2,7 +2,6 @@ node_modules
 public/modules
 builds
 dll
-cordova
 web
 web/files
 release/app/node_modules

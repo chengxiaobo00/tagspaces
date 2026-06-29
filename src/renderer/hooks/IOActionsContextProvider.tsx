@@ -1325,13 +1325,13 @@ export const IOActionsContextProvider = ({
     }
     // Path-based upload only works where the platform attaches a real native
     // path to each browser File object: Electron sets it via
-    // `ipcRenderer.getPathForFile`, and the Cordova file plugin populates it.
+    // `ipcRenderer.getPathForFile`.
     // Capacitor's `<input type="file">` returns standard browser File objects
     // with `file.path === undefined`, so it must take the FileReader →
     // ArrayBuffer → saveBinaryFilePromise path below (which uses Uint8Array
     // — make sure `blobToBase64` in io-capacitor.ts handles ArrayBuffer.isView,
     // otherwise the writes silently produce garbage).
-    if (AppConfig.isElectron || AppConfig.isCordovaiOS) {
+    if (AppConfig.isElectron) {
       return uploadFiles(
         files.map((f) => f.path),
         targetPath,

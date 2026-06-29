@@ -1101,7 +1101,7 @@ export const LocationIndexContextProvider = ({
   }
 
   /**
-   * persistIndex based on location - used for S3 and cordova only
+   * persistIndex based on location - used for S3 and Capacitor only
    * for native used common-platform/indexer.js -> persistIndex instead
    * @param param
    * @param directoryIndex

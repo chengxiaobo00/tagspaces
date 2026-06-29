@@ -439,7 +439,7 @@ export async function generateImageThumbnail(
 
     // --- STANDARD IMAGE LOGIC ---
     if (AppConfig.isNativeMobile) {
-      objectURL = await cordovaCreateObjectURL(blob);
+      objectURL = await mobileCreateObjectURL(blob);
     } else {
       objectURL = URL.createObjectURL(blob);
     }
@@ -468,7 +468,7 @@ export async function generateImageThumbnail(
   }
 }
 
-function cordovaCreateObjectURL(blob): Promise<string> {
+function mobileCreateObjectURL(blob): Promise<string> {
   return new Promise((resolve) => {
     const reader = new FileReader();
     reader.onload = function (event) {

@@ -75,9 +75,9 @@ function AboutDialog(props: Props) {
     if (updateAvailable) {
       // On mobile the app is updated through the store, so route there
       // instead of the desktop downloads page.
-      if (AppConfig.isCapacitoriOS || AppConfig.isCordovaiOS) {
+      if (AppConfig.isCapacitoriOS) {
         openURLExternally(Links.links.appStoreApp, true);
-      } else if (AppConfig.isCapacitorAndroid || AppConfig.isCordovaAndroid) {
+      } else if (AppConfig.isCapacitorAndroid) {
         openURLExternally(Links.links.playStoreApp, true);
       } else {
         openURLExternally(Links.links.downloadURL, true);
