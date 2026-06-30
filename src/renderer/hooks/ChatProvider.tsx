@@ -1182,7 +1182,12 @@ export const ChatContextProvider = ({ children }: ChatContextProviderProps) => {
             );
           }
         } else {
-          showNotification(t('core:ollamaConnectionError'));
+          // No model resolved for this entry's file type — not a connection
+          // problem. Most often the active provider has no default image/text
+          // model set, or the configured model isn't in the provider's list.
+          showNotification(
+            t('core:noModelConfiguredFor', { name: entry.name }),
+          );
           return Promise.resolve(undefined);
         }
         // Extension is neither image, text/pdf nor a folder — skip it instead
