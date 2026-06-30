@@ -110,6 +110,47 @@ export async function getOpenAIModels(
 }
 
 /**
+ * `zodToJsonSchema` (used by ChatProvider) emits a draft `$schema` declaration
+ * and references additional `$defs`/`definitions`. Strict structured-output
+ * validators on OpenAI-compatible servers (LM Studio, llama.cpp) reject the
+ * `$schema` keyword and the `$ref` indirection with HTTP 400. Strip `$schema`
+ * everywhere and inline single-definition `$ref`s so the schema is a plain,
+ * self-contained object.
+ */
+function sanitizeJsonSchema(schema: any): any {
+  if (!schema || typeof schema !== 'object') {
+    return schema;
+  }
+  const defs = schema.$defs || schema.definitions;
+  const resolveRef = (node: any): any => {
+    if (Array.isArray(node)) {
+      return node.map(resolveRef);
+    }
+    if (node && typeof node === 'object') {
+      if (typeof node.$ref === 'string' && defs) {
+        const key = node.$ref.replace(/^#\/(?:\$defs|definitions)\//, '');
+        if (defs[key]) {
+          return resolveRef(defs[key]);
+        }
+      }
+      return Object.entries(node)
+        .filter(
+          ([k]) => k !== '$schema' && k !== '$defs' && k !== 'definitions',
+        )
+        .reduce(
+          (acc, [k, v]) => {
+            acc[k] = resolveRef(v);
+            return acc;
+          },
+          {} as Record<string, any>,
+        );
+    }
+    return node;
+  };
+  return resolveRef(schema);
+}
+
+/**
  * Translate the internal (Ollama-native) ChatRequest into an OpenAI
  * chat-completions body:
  *  - `messages[].images: [base64]` → `content: [{type:'text'}, {type:'image_url', ...}]`
@@ -144,7 +185,7 @@ function toOpenAIRequest(msg: ChatRequest): Record<string, any> {
   if (format && typeof format === 'object') {
     body.response_format = {
       type: 'json_schema',
-      json_schema: { name: 'result', schema: format },
+      json_schema: { name: 'result', schema: sanitizeJsonSchema(format) },
     };
   }
   return body;
@@ -174,7 +215,11 @@ export async function newOpenAIMessage(
       signal,
     });
     if (!response.ok) {
-      console.error('newOpenAIMessage HTTP ' + response.status);
+      // Surface the server's error body — OpenAI-compatible servers (LM Studio,
+      // llama.cpp, …) put the actual reason there (e.g. an unsupported
+      // response_format/schema, or a non-vision model rejecting an image).
+      const errBody = await response.text().catch(() => '');
+      console.error(`newOpenAIMessage HTTP ${response.status} ${errBody}`);
       return undefined;
     }
 
