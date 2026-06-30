@@ -17,6 +17,10 @@ export async function createColumn(columnName) {
 
 export async function createMdCard(cardName, column = 'empty_folder') {
   await clickOn('[data-tid=createCard_' + column + ']');
+  // The new-file dialog now opens on the template tile grid; pick the Markdown
+  // template to reach the editable name/content form (produces an .md file).
+  await clickOn('[data-tid=newFileTemplateTile_templateMd]');
+  await expectElementExist('[data-tid=newEntryDialogInputTID]', true, 5000);
   await typeInputValue('[data-tid=newEntryDialogInputTID] input', cardName, 0);
   const newValue = await global.client.locator('[data-tid=newEntryDialogInputTID] input').inputValue();
   //console.log('newValue:'+dataTidFormat(newValue));
