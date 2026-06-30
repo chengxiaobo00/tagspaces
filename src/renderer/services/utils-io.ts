@@ -1447,28 +1447,9 @@ export function toTsLocation(location: CommonLocation): TS.S3Location {
   return result as TS.S3Location;
 }
 
-export function toBase64Image(
-  uint8Array: Uint8Array | null | undefined,
-): string | undefined {
-  if (!uint8Array || uint8Array.length === 0) {
-    return undefined;
-  }
-  try {
-    // Build the binary string in chunks to avoid "Maximum call stack size
-    // exceeded" — String.fromCharCode.apply spreads every byte as an argument,
-    // which overflows the stack for large images.
-    let binary = '';
-    const chunkSize = 0x8000; // 32k
-    for (let i = 0; i < uint8Array.length; i += chunkSize) {
-      const chunk = uint8Array.subarray(i, i + chunkSize);
-      binary += String.fromCharCode.apply(null, chunk as any);
-    }
-    return btoa(binary);
-  } catch (e) {
-    console.error('toBase64Image error:', e);
-    return undefined;
-  }
-}
+// toBase64Image lives in its own dependency-free module so it stays
+// unit-testable; re-exported here for existing import sites.
+export { toBase64Image } from '-/services/base64';
 
 /**
  * shallow compare Entries array (and optional mtime)

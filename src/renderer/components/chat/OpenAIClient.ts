@@ -26,6 +26,7 @@
  * can dispatch to either by engine.
  */
 import { ChatRequest, ModelResponse } from 'ollama';
+import { sanitizeJsonSchema } from '-/components/chat/openai-schema';
 
 /**
  * Resolve the OpenAI base URL. The configured URL is treated as the base that
@@ -107,47 +108,6 @@ export async function getOpenAIModels(
     console.log('getOpenAIModels', e);
     return undefined;
   }
-}
-
-/**
- * `zodToJsonSchema` (used by ChatProvider) emits a draft `$schema` declaration
- * and references additional `$defs`/`definitions`. Strict structured-output
- * validators on OpenAI-compatible servers (LM Studio, llama.cpp) reject the
- * `$schema` keyword and the `$ref` indirection with HTTP 400. Strip `$schema`
- * everywhere and inline single-definition `$ref`s so the schema is a plain,
- * self-contained object.
- */
-function sanitizeJsonSchema(schema: any): any {
-  if (!schema || typeof schema !== 'object') {
-    return schema;
-  }
-  const defs = schema.$defs || schema.definitions;
-  const resolveRef = (node: any): any => {
-    if (Array.isArray(node)) {
-      return node.map(resolveRef);
-    }
-    if (node && typeof node === 'object') {
-      if (typeof node.$ref === 'string' && defs) {
-        const key = node.$ref.replace(/^#\/(?:\$defs|definitions)\//, '');
-        if (defs[key]) {
-          return resolveRef(defs[key]);
-        }
-      }
-      return Object.entries(node)
-        .filter(
-          ([k]) => k !== '$schema' && k !== '$defs' && k !== 'definitions',
-        )
-        .reduce(
-          (acc, [k, v]) => {
-            acc[k] = resolveRef(v);
-            return acc;
-          },
-          {} as Record<string, any>,
-        );
-    }
-    return node;
-  };
-  return resolveRef(schema);
 }
 
 /**

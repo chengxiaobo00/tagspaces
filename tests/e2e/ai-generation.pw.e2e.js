@@ -214,9 +214,19 @@ test.describe('TST70 - AI generation: mocked OpenAI-compatible [electron,_pro]',
       // the tags-mode JSON schema surfaced as response_format.json_schema.
       expect(Array.isArray(capture.lastChatBody?.messages)).toBe(true);
       expect(capture.lastChatBody?.response_format?.type).toBe('json_schema');
-      expect(
-        capture.lastChatBody?.response_format?.json_schema?.schema,
-      ).toBeTruthy();
+      const sentSchema =
+        capture.lastChatBody?.response_format?.json_schema?.schema;
+      expect(sentSchema).toBeTruthy();
+
+      // The schema must be sanitized before it reaches an OpenAI-compatible
+      // server: zodToJsonSchema emits a `$schema` declaration and `$defs`/`$ref`
+      // indirection that LM Studio / llama.cpp reject with HTTP 400. Assert no
+      // such keyword survives anywhere in the sent schema tree.
+      const schemaJson = JSON.stringify(sentSchema);
+      expect(schemaJson).not.toContain('$schema');
+      expect(schemaJson).not.toContain('$ref');
+      expect(schemaJson).not.toContain('$defs');
+      expect(schemaJson).not.toContain('definitions');
 
       // Wait for the per-file processed check so the tag-apply + rename has
       // actually landed before we close and read the on-disk state.
