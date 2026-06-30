@@ -108,6 +108,7 @@ type ChatData = {
   changeCurrentModel: (
     newModelName: string,
     confirmCallback?: () => void,
+    provider?: AIProvider,
   ) => Promise<boolean>;
   getModel: (modelName: string) => Promise<ModelResponse>;
   addChatHistory: (txt: string, replace?: boolean) => ChatItem[];
@@ -546,26 +547,38 @@ export const ChatContextProvider = ({ children }: ChatContextProviderProps) => {
   async function changeCurrentModel(
     newModelName: string,
     confirmCallback?,
+    provider: AIProvider = defaultAiProvider,
   ): Promise<boolean> {
-    let model;
-    if (!aiClient.current) {
-      const client = await getAiClient(defaultAiProvider);
-      aiClient.current = client;
+    if (!provider) {
+      return true;
+    }
+    // The model picker in settings calls this per-provider, so resolve the
+    // model (and the pull capability) against the provider being edited — not
+    // the active one. Only reuse the cached active client/models when they
+    // belong to the same provider; otherwise build a throwaway client so we
+    // never check a model against the wrong engine.
+    const isActiveProvider = provider.id === defaultAiProvider?.id;
+    let client = isActiveProvider ? aiClient.current : undefined;
+    let providerModels = isActiveProvider ? models.current : undefined;
+    if (!client) {
+      client = await getAiClient(provider);
+      if (isActiveProvider) {
+        aiClient.current = client;
+      }
       const m = client ? await client.list() : undefined;
       if (m) {
-        models.current = m;
-        model = models.current.find(
-          (m) => m.name === newModelName || m.name === newModelName + ':latest',
-        );
+        providerModels = m;
+        if (isActiveProvider) {
+          models.current = m;
+        }
       }
-    } else {
-      model = findModel(newModelName);
     }
+    const model = providerModels?.find(
+      (m) => m.name === newModelName || m.name === newModelName + ':latest',
+    );
     // Downloading a model on demand is Ollama-only; other engines manage
     // their models externally, so just bail out without a pull prompt.
-    if (!model && defaultAiProvider && aiClient.current?.pull) {
-      // return setModel(model);
-      // } else {
+    if (!model && client?.pull) {
       const result = confirm(
         'Do you want to download and install ' + newModelName + ' model?',
       );
@@ -590,12 +603,10 @@ export const ChatContextProvider = ({ children }: ChatContextProviderProps) => {
             );
           }
         };
-        return aiClient.current
-          .pull(newModelName, onProgressHandler)
-          .then((response) => {
-            console.log('pullOllamaModel response:' + response);
-            return refreshOllamaModels(newModelName);
-          });
+        return client.pull(newModelName, onProgressHandler).then((response) => {
+          console.log('pullOllamaModel response:' + response);
+          return refreshOllamaModels(newModelName);
+        });
         /*return window.electronIO.ipcRenderer
           .invoke('pullOllamaModel', defaultAiProvider.url, {
             name: newModelName,

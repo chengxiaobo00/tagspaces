@@ -473,7 +473,7 @@ function SettingsAI(props: Props) {
                     'defaultTextModel',
                     modelName,
                   );
-                  changeCurrentModel(modelName, closeSettings);
+                  changeCurrentModel(modelName, closeSettings, provider);
                 }}
                 aiProvider={provider}
                 chosenModel={provider.defaultTextModel}
@@ -487,7 +487,7 @@ function SettingsAI(props: Props) {
                     'defaultImageModel',
                     modelName,
                   );
-                  changeCurrentModel(modelName, closeSettings);
+                  changeCurrentModel(modelName, closeSettings, provider);
                 }}
                 aiProvider={provider}
                 chosenModel={provider.defaultImageModel}
