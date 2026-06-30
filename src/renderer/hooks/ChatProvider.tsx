@@ -363,7 +363,11 @@ export const ChatContextProvider = ({ children }: ChatContextProviderProps) => {
       // No AI provider configured/enabled — generation cannot start.
       return Promise.resolve(false);
     }
-    if (!models.current || models.current.length === 0) {
+    // Rebuild when the client is missing even if a model list is cached: the
+    // two refs can fall out of sync (e.g. the provider-switch effect clears
+    // aiClient.current), and a stale model list would otherwise let generation
+    // proceed into newChatMessage, which then fails with "service not alive".
+    if (!aiClient.current || !models.current || models.current.length === 0) {
       return getAiClient(defaultAiProvider).then((client) => {
         aiClient.current = client;
         return refreshOllamaModels();
@@ -1244,42 +1248,51 @@ export const ChatContextProvider = ({ children }: ChatContextProviderProps) => {
     entry: TS.FileSystemEntry,
     fromDescription: boolean = false,
   ): Promise<boolean> {
-    const entryModel: ModelResponse = getEntryModel(
-      entry.name,
-      defaultAiProvider,
-    );
-    if (entryModel) {
-      const ext = extractFileExtension(entry.name).toLowerCase();
-      if (
-        (fromDescription || generationSettings.current.fromDescription) &&
-        entry.meta?.description
-      ) {
-        return newChatMessage(
-          entry.meta.description,
-          false,
-          'user',
-          'tags',
-          defaultAiProvider.defaultTextModel,
-          false,
-          [],
-          false,
-        ).then((results) => handleGenTagsResults(entry, results));
-      } else if (AppConfig.aiSupportedFiletypes.image.includes(ext)) {
-        return generate('image', 'tags', entryModel.name, entry).then(
-          (results) => handleGenTagsResults(entry, results),
-        );
-      } else if (AppConfig.aiSupportedFiletypes.text.includes(ext)) {
-        return generate('text', 'tags', entryModel.name, entry).then(
-          (results) => handleGenTagsResults(entry, results),
+    // Ensure the AI client + model list are ready before generating; otherwise
+    // newChatMessage can fail with "service not alive" when the client ref was
+    // dropped (e.g. after a provider switch) while a stale model list lingers.
+    return checkOllamaModels().then((ready) => {
+      if (!ready) {
+        showNotification(t('core:noModelsLoaded'));
+        return false;
+      }
+      const entryModel: ModelResponse = getEntryModel(
+        entry.name,
+        defaultAiProvider,
+      );
+      if (entryModel) {
+        const ext = extractFileExtension(entry.name).toLowerCase();
+        if (
+          (fromDescription || generationSettings.current.fromDescription) &&
+          entry.meta?.description
+        ) {
+          return newChatMessage(
+            entry.meta.description,
+            false,
+            'user',
+            'tags',
+            defaultAiProvider.defaultTextModel,
+            false,
+            [],
+            false,
+          ).then((results) => handleGenTagsResults(entry, results));
+        } else if (AppConfig.aiSupportedFiletypes.image.includes(ext)) {
+          return generate('image', 'tags', entryModel.name, entry).then(
+            (results) => handleGenTagsResults(entry, results),
+          );
+        } else if (AppConfig.aiSupportedFiletypes.text.includes(ext)) {
+          return generate('text', 'tags', entryModel.name, entry).then(
+            (results) => handleGenTagsResults(entry, results),
+          );
+        }
+      } else {
+        showNotification(
+          t('core:tagsGenerationNotSupportedFor', { name: entry.name }),
         );
       }
-    } else {
-      showNotification(
-        t('core:tagsGenerationNotSupportedFor', { name: entry.name }),
-      );
-    }
 
-    return Promise.resolve(false);
+      return false;
+    });
   }
 
   function handleGenTagsResults(entry, response): Promise<boolean> {
