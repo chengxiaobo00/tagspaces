@@ -25,20 +25,20 @@ import {
   ReloadIcon,
   RemoveIcon,
 } from '-/components/CommonIcons';
-import TsTooltip from '-/components/TsTooltip';
 import TsButton from '-/components/TsButton';
 import TsIconButton from '-/components/TsIconButton';
 import TsMenuList from '-/components/TsMenuList';
 import TsSelect from '-/components/TsSelect';
 import TsSwitch from '-/components/TsSwitch';
 import TsTextField from '-/components/TsTextField';
+import TsTooltip from '-/components/TsTooltip';
 import { AIProvider } from '-/components/chat/ChatTypes';
+import SelectChatModel from '-/components/chat/SelectChatModel';
 import {
   AiPreset,
   aiPresets,
   presetIconForEngine,
 } from '-/components/chat/aiPresets';
-import SelectChatModel from '-/components/chat/SelectChatModel';
 import { useChatContext } from '-/hooks/useChatContext';
 import { Pro } from '-/pro';
 import { AppDispatch } from '-/reducers/app';
@@ -47,7 +47,6 @@ import {
   getAIProviders,
   getDefaultAIProvider,
 } from '-/reducers/settings';
-import { openURLExternally } from '-/services/utils-io';
 import { TS } from '-/tagspaces.namespace';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import {
@@ -250,23 +249,7 @@ function SettingsAI(props: Props) {
             variant="caption"
             sx={{ display: 'block', marginBottom: 1 }}
           >
-            {t('peri:ollamaIntroPrefix')}{' '}
-            <TsButton
-              sx={{
-                fontSize: '13px',
-                textTransform: 'unset',
-                fontWeight: 'normal',
-                paddingTop: 0,
-                paddingBottom: 0,
-              }}
-              variant="text"
-              onClick={() => {
-                openURLExternally('https://ollama.com/download', true);
-              }}
-            >
-              ollama.com
-            </TsButton>{' '}
-            {t('peri:ollamaIntroSuffix')}
+            {t('peri:aiClarification')}{' '}
           </Typography>
           <ClickAwayListener onClickAway={handleClose}>
             <Box
