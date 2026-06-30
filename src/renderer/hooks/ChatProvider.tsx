@@ -894,8 +894,14 @@ export const ChatContextProvider = ({ children }: ChatContextProviderProps) => {
     const msgContent = getMessage(msg, mode);
     const imagesArray =
       imgArray.length > 0 ? imgArray : images.current.map((i) => i.base64);
+    // Build a message when there's prompt text OR an image to send. An image
+    // alone is a valid request (vision models), so it must not be dropped just
+    // because the prompt template resolved empty — otherwise `messages` ends up
+    // [] and OpenAI-compatible servers reject it ("messages array cannot be
+    // empty"). The empty-on-both case is preserved: it's the Ollama model
+    // load/unload idiom.
     const messages =
-      msgContent && !unload
+      (msgContent || imagesArray.length > 0) && !unload
         ? [
             ...getOllamaMessages(
               includeHistory ? chatHistoryItems.current : [],
@@ -903,7 +909,7 @@ export const ChatContextProvider = ({ children }: ChatContextProviderProps) => {
             ),
             {
               role: role,
-              content: msgContent,
+              content: msgContent || '',
               ...(imagesArray.length > 0 && { images: imagesArray }),
             },
           ]
@@ -955,7 +961,7 @@ export const ChatContextProvider = ({ children }: ChatContextProviderProps) => {
     };
     // console.log('AI question: ' + JSON.stringify(messages));
     if (!aiClient.current) {
-      showNotification(t('core:ollamaServiceNotAlive'));
+      showNotification(t('core:aiServiceNotReachable'));
       isTyping.current = false;
       forceUpdate();
       return Promise.resolve(undefined);
@@ -967,7 +973,10 @@ export const ChatContextProvider = ({ children }: ChatContextProviderProps) => {
         isTyping.current = false;
         forceUpdate();
         if (apiResponse === undefined && stream === false) {
-          showNotification(t('core:ollamaServiceNotAlive'));
+          // The client returned nothing — the service is reachable but the
+          // request failed (bad model, rejected schema/image, etc.). Not a
+          // liveness problem, so don't claim the service is down.
+          showNotification(t('core:aiGenerationFailed'));
           return undefined;
         }
         if (msg && includeHistory) {

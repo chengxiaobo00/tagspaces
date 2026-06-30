@@ -167,6 +167,12 @@ export async function newOpenAIMessage(
     return undefined;
   }
   const body = toOpenAIRequest(msg);
+  // An empty messages array is the Ollama-only model load/unload idiom; OpenAI
+  // servers reject it with HTTP 400 ("messages array cannot be empty"). Treat
+  // it as a no-op so it never reaches the wire as a spurious error.
+  if (!Array.isArray(body.messages) || body.messages.length === 0) {
+    return undefined;
+  }
   try {
     const response = await fetch(`${apiBase(url)}/chat/completions`, {
       method: 'POST',
