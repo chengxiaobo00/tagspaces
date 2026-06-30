@@ -1454,7 +1454,16 @@ export function toBase64Image(
     return undefined;
   }
   try {
-    return btoa(String.fromCharCode.apply(null, Array.from(uint8Array) as any));
+    // Build the binary string in chunks to avoid "Maximum call stack size
+    // exceeded" — String.fromCharCode.apply spreads every byte as an argument,
+    // which overflows the stack for large images.
+    let binary = '';
+    const chunkSize = 0x8000; // 32k
+    for (let i = 0; i < uint8Array.length; i += chunkSize) {
+      const chunk = uint8Array.subarray(i, i + chunkSize);
+      binary += String.fromCharCode.apply(null, chunk as any);
+    }
+    return btoa(binary);
   } catch (e) {
     console.error('toBase64Image error:', e);
     return undefined;
