@@ -4,7 +4,7 @@
 
 multiplatform
 
-docker buildx build --platform linux/amd64,linux/arm64 -t tagspaces-lite-web:6.11.4 .
+docker buildx build --platform linux/amd64,linux/arm64 -t tagspaces-lite-web:6.13.9 .
 
 old: docker build . -t tagspaces-lite-web:6.3.0
 
